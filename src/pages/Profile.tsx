@@ -6,16 +6,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import PostCard, { PostCardSkeleton } from "@/components/post/PostCard";
+import EditProfileForm from "@/components/profile/EditProfileForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Pencil, Share2 } from "lucide-react";
 
 const Profile = () => {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   
   // For demo purposes, we'll pretend we're viewing the logged in user's profile
   // In a real app, we'd fetch the user data based on the username parameter
@@ -43,6 +49,16 @@ const Profile = () => {
     setPosts(posts.map(post => 
       post.id === updatedPost.id ? updatedPost : post
     ));
+  };
+  
+  const handleShareProfile = () => {
+    // In a real app, this would open a share dialog or copy a link
+    toast.success("Profile link copied to clipboard!");
+  };
+  
+  const handleProfileUpdated = () => {
+    // In a real app, we would refetch the user data
+    toast.success("Profile updated successfully");
   };
   
   if (!viewedUser) {
@@ -101,22 +117,33 @@ const Profile = () => {
             </div>
           </div>
           
-          {isOwnProfile ? (
+          <div className="flex space-x-2">
             <Button
               variant="outline" 
-              onClick={() => toast.info("Edit profile functionality would go here")}
+              size="sm"
+              onClick={handleShareProfile}
             >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Profile
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
             </Button>
-          ) : (
-            <Button
-              className="vibe-button"
-              onClick={() => toast.success("User followed!")}
-            >
-              Follow
-            </Button>
-          )}
+            
+            {isOwnProfile ? (
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+            ) : (
+              <Button
+                className="vibe-button"
+                onClick={() => toast.success("User followed!")}
+              >
+                Follow
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       
@@ -166,6 +193,16 @@ const Profile = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-xl">
+          <EditProfileForm 
+            onClose={() => setShowEditDialog(false)}
+            onProfileUpdated={handleProfileUpdated}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

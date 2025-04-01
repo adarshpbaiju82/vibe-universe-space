@@ -1,4 +1,3 @@
-
 // Mock data for our social media app
 
 export interface Post {
@@ -23,6 +22,7 @@ export interface Comment {
   content: string;
   likes: number;
   createdAt: Date;
+  parentId?: string;
 }
 
 // Mock posts data
@@ -109,11 +109,22 @@ const MOCK_COMMENTS: Record<string, Comment[]> = {
       content: "Love the vibrant energy!",
       likes: 2,
       createdAt: new Date(Date.now() - 2500000)
+    },
+    {
+      id: "c3",
+      postId: "p1",
+      userId: "4",
+      username: "quantumleap",
+      userAvatar: "https://i.pravatar.cc/150?img=4",
+      content: "This is a reply to the first comment",
+      likes: 1,
+      createdAt: new Date(Date.now() - 2000000),
+      parentId: "c1"
     }
   ],
   "p2": [
     {
-      id: "c3",
+      id: "c4",
       postId: "p2",
       userId: "1",
       username: "cosmicvibe",
@@ -194,7 +205,8 @@ export const addComment = async (
   userId: string,
   username: string,
   userAvatar: string,
-  content: string
+  content: string,
+  parentId?: string
 ): Promise<Comment> => {
   await delay(800);
   
@@ -206,7 +218,8 @@ export const addComment = async (
     userAvatar,
     content,
     likes: 0,
-    createdAt: new Date()
+    createdAt: new Date(),
+    parentId
   };
   
   // Initialize comments array for this post if it doesn't exist
@@ -223,6 +236,31 @@ export const addComment = async (
   }
   
   return newComment;
+};
+
+// Edit a comment
+export const editComment = async (commentId: string, content: string): Promise<Comment> => {
+  await delay(500);
+  
+  // Find the comment in all posts
+  let updatedComment: Comment | null = null;
+  
+  Object.keys(MOCK_COMMENTS).forEach(postId => {
+    const commentIndex = MOCK_COMMENTS[postId].findIndex(c => c.id === commentId);
+    if (commentIndex !== -1) {
+      MOCK_COMMENTS[postId][commentIndex] = {
+        ...MOCK_COMMENTS[postId][commentIndex],
+        content
+      };
+      updatedComment = MOCK_COMMENTS[postId][commentIndex];
+    }
+  });
+  
+  if (!updatedComment) {
+    throw new Error("Comment not found");
+  }
+  
+  return updatedComment;
 };
 
 // Explore suggestion data
@@ -368,4 +406,17 @@ export const getNotifications = async (): Promise<Notification[]> => {
       isRead: true
     }
   ];
+};
+
+// Profile editing functionality
+export interface UpdateProfileData {
+  name?: string;
+  bio?: string;
+  avatar?: string;
+}
+
+export const updateUserProfile = async (userId: string, data: UpdateProfileData): Promise<boolean> => {
+  await delay(800);
+  // In a real app, we would update the user profile in the database
+  return true;
 };
