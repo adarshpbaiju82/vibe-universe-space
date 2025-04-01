@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import RightPanel from "./RightPanel";
+import BottomNav from "./BottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout = () => {
@@ -36,7 +37,7 @@ const Layout = () => {
         
         {/* Main Content Area */}
         <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
-          <div className="animate-fade-in">
+          <div className="animate-fade-in pb-16 md:pb-0">
             <Outlet />
           </div>
         </main>
@@ -46,6 +47,9 @@ const Layout = () => {
           <RightPanel />
         </div>
       </div>
+      
+      {/* Bottom Mobile Navigation */}
+      <BottomNav />
     </div>
   );
 };
