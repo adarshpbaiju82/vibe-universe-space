@@ -14,6 +14,11 @@ const Layout = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   
+  // Scroll to top when route changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
   useEffect(() => {
     // Redirect to sign in if not authenticated
     if (!isAuthenticated) {
@@ -21,18 +26,15 @@ const Layout = () => {
     }
   }, [isAuthenticated, navigate]);
   
-  // Mobile view state
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Navbar - visible on all screen sizes */}
-      <Navbar onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
+      <Navbar onMenuToggle={() => {}} />
       
       <div className="flex flex-1 w-full max-w-7xl mx-auto">
-        {/* Sidebar - Hidden on mobile unless menu is open */}
-        <div className={`${mobileMenuOpen ? 'fixed inset-0 z-50 bg-background' : 'hidden'} md:block md:relative md:w-64 xl:w-72 md:z-auto`}>
-          <Sidebar onCloseMobile={() => setMobileMenuOpen(false)} />
+        {/* Sidebar - Hidden on mobile */}
+        <div className="hidden md:block md:relative md:w-64 xl:w-72 md:z-auto">
+          <Sidebar onCloseMobile={() => {}} />
         </div>
         
         {/* Main Content Area */}
