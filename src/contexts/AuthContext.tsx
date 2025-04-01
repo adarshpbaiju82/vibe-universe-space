@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 // Define types
@@ -54,7 +54,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Provider component
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  // These hooks are now safely inside Router context since we moved the BrowserRouter up
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
     // Check if user is stored in localStorage on component mount

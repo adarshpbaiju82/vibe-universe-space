@@ -15,15 +15,19 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (
+  // First wrap with QueryClientProvider
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    {/* Then wrap with BrowserRouter so that all components have access to routing */}
+    <BrowserRouter>
+      {/* Then wrap with AuthProvider so it has access to routing context */}
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
@@ -36,9 +40,9 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
