@@ -5,11 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import RightPanel from "./RightPanel";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     // Redirect to sign in if not authenticated
@@ -23,10 +25,8 @@ const Layout = () => {
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Mobile Navbar */}
-      <div className="md:hidden">
-        <Navbar onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-      </div>
+      {/* Navbar - visible on all screen sizes */}
+      <Navbar onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
       
       <div className="flex flex-1 w-full max-w-7xl mx-auto">
         {/* Sidebar - Hidden on mobile unless menu is open */}

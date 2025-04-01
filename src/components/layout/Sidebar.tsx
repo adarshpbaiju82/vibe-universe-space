@@ -4,6 +4,7 @@ import { Home, Compass, Bell, Settings, LogOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   onCloseMobile?: () => void;
@@ -12,6 +13,7 @@ interface SidebarProps {
 const Sidebar = ({ onCloseMobile }: SidebarProps) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -25,12 +27,14 @@ const Sidebar = ({ onCloseMobile }: SidebarProps) => {
   return (
     <div className="h-full flex flex-col p-4 border-r border-border">
       {/* Mobile Close Button */}
-      <div className="md:hidden flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold gradient-text">VibeUniverse</h1>
-        <Button variant="ghost" size="icon" onClick={onCloseMobile}>
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+      {isMobile && (
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl font-bold gradient-text">VibeUniverse</h1>
+          <Button variant="ghost" size="icon" onClick={onCloseMobile}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
       
       {/* User Profile Summary */}
       {user && (
@@ -74,7 +78,7 @@ const Sidebar = ({ onCloseMobile }: SidebarProps) => {
       
       {/* New Post Button */}
       <div className="my-4">
-        <Button className="w-full vibe-button">
+        <Button className="w-full vibe-button" onClick={onCloseMobile}>
           Create Post
         </Button>
       </div>
