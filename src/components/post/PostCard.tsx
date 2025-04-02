@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -48,7 +47,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   const [reportDescription, setReportDescription] = useState("");
   const [isHidden, setIsHidden] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-  const bodyRef = useRef<HTMLBodyElement | null>(document.querySelector("body"));
   
   const handleLikeClick = async () => {
     if (isLiking) return;
@@ -75,16 +73,15 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     setShowReportDialog(true);
   };
   
-  // Fix for modal interaction issue: when dialog opens/closes, manage document overflow
-  const handleDialogChange = (open: boolean) => {
-    // When closing dialog
+  const handleDialogChange = (open: boolean, dialogType: 'share' | 'report') => {
+    if (dialogType === 'share') {
+      setShowShareDialog(open);
+    } else {
+      setShowReportDialog(open);
+    }
+    
     if (!open) {
-      // Small delay to ensure dialog closing animation completes
-      setTimeout(() => {
-        if (bodyRef.current) {
-          bodyRef.current.style.pointerEvents = 'auto';
-        }
-      }, 100);
+      // If needed for future cleanup
     }
   };
   
@@ -96,10 +93,9 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     
     setIsSubmittingReport(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsSubmittingReport(false);
-      setShowReportDialog(false);
+      handleDialogChange(false, 'report');
       setReportReason("");
       setReportDescription("");
       toast.success("Report submitted successfully. Thank you for keeping our community safe.");
@@ -133,15 +129,14 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   return (
     <Card className="mb-4 overflow-hidden card-hover border-border">
       <CardContent className="p-4">
-        {/* Post Header */}
         <div className="flex justify-between items-start mb-3">
-          <Link to={`/profile/${post.username}`} className="flex items-center space-x-3">
+          <Link to={`/profile/${post.user.name}`} className="flex items-center space-x-3">
             <Avatar>
-              <AvatarImage src={post.userAvatar} alt={post.username} />
-              <AvatarFallback>{post.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={post.user.avatar} alt={post.user.name} />
+              <AvatarFallback>{post.user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{post.username}</p>
+              <p className="font-medium">{post.user.name}</p>
               <p className="text-xs text-muted-foreground">{formatTimestamp(post.createdAt)}</p>
             </div>
           </Link>
@@ -167,14 +162,13 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           </DropdownMenu>
         </div>
         
-        {/* Post Content */}
         <div className="mb-4">
           <p className="mb-3">{post.content}</p>
           
-          {post.image && !post.video && (
+          {post.mediaUrl && post.mediaType === 'image' && (
             <div className="relative rounded-lg overflow-hidden mb-2 aspect-video bg-muted/30">
               <img 
-                src={post.image} 
+                src={post.mediaUrl} 
                 alt="Post content" 
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -182,11 +176,11 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
             </div>
           )}
           
-          {post.video && (
+          {post.mediaUrl && post.mediaType === 'video' && (
             <div className="rounded-lg overflow-hidden mb-2 aspect-video">
               <VideoPlayer 
-                src={post.video} 
-                poster={post.image} 
+                src={post.mediaUrl} 
+                poster={post.mediaUrl} 
                 className="w-full aspect-video"
               />
             </div>
@@ -198,11 +192,11 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`flex items-center space-x-2 ${post.isLiked ? 'text-red-500' : ''}`} 
+          className="flex items-center space-x-2" 
           onClick={handleLikeClick}
           disabled={isLiking}
         >
-          <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-red-500' : ''}`} />
+          <Heart className={`h-4 w-4 ${post.likes > 0 ? 'fill-red-500 text-red-500' : ''}`} />
           <span>{post.likes}</span>
         </Button>
         
@@ -226,13 +220,9 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <Comments postId={post.id} commentCount={post.comments} />
       </div>
       
-      {/* Share Dialog */}
       <Dialog 
         open={showShareDialog} 
-        onOpenChange={(open) => {
-          setShowShareDialog(open);
-          handleDialogChange(open);
-        }}
+        onOpenChange={(open) => handleDialogChange(open, 'share')}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -248,7 +238,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               </div>
               <Button onClick={() => {
                 toast.success("Link copied to clipboard!");
-                setShowShareDialog(false);
+                handleDialogChange(false, 'share');
               }}>
                 Copy Link
               </Button>
@@ -275,13 +265,9 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         </DialogContent>
       </Dialog>
       
-      {/* Report Dialog */}
       <Dialog 
         open={showReportDialog} 
-        onOpenChange={(open) => {
-          setShowReportDialog(open);
-          handleDialogChange(open);
-        }}
+        onOpenChange={(open) => handleDialogChange(open, 'report')}
       >
         <DialogContent>
           <DialogHeader>
@@ -314,7 +300,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+            <Button variant="outline" onClick={() => handleDialogChange(false, 'report')}>
               Cancel
             </Button>
             <Button 
@@ -346,7 +332,6 @@ export const PostCardSkeleton = () => {
   return (
     <Card className="mb-4 overflow-hidden">
       <CardContent className="p-4">
-        {/* Skeleton Header */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center space-x-3">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -357,7 +342,6 @@ export const PostCardSkeleton = () => {
           </div>
         </div>
         
-        {/* Skeleton Content */}
         <div className="mb-4">
           <Skeleton className="h-4 w-full mb-2" />
           <Skeleton className="h-4 w-full mb-2" />
