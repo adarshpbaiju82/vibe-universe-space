@@ -78,10 +78,12 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
       setShowShareDialog(open);
     } else {
       setShowReportDialog(open);
-    }
-    
-    if (!open) {
-      // If needed for future cleanup
+      
+      if (!open) {
+        setReportReason("");
+        setReportDescription("");
+        setIsSubmittingReport(false);
+      }
     }
   };
   
@@ -95,9 +97,9 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     
     setTimeout(() => {
       setIsSubmittingReport(false);
-      handleDialogChange(false, 'report');
       setReportReason("");
       setReportDescription("");
+      setShowReportDialog(false);
       toast.success("Report submitted successfully. Thank you for keeping our community safe.");
     }, 1000);
   };
@@ -238,7 +240,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               </div>
               <Button onClick={() => {
                 toast.success("Link copied to clipboard!");
-                handleDialogChange(false, 'share');
+                setShowShareDialog(false);
               }}>
                 Copy Link
               </Button>
@@ -300,7 +302,11 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogChange(false, 'report')}>
+            <Button variant="outline" onClick={() => {
+              setShowReportDialog(false);
+              setReportReason("");
+              setReportDescription("");
+            }}>
               Cancel
             </Button>
             <Button 
