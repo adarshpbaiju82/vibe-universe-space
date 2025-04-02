@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Flag, X, Check } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, X, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -22,14 +22,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toggleLike, Post } from "@/services/dataService";
 import { toast } from "sonner";
 import Comments from "./Comments";
@@ -43,11 +35,7 @@ interface PostCardProps {
 const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   const [isLiking, setIsLiking] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showReportDialog, setShowReportDialog] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [reportDescription, setReportDescription] = useState("");
   const [isHidden, setIsHidden] = useState(false);
-  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   
   const handleLikeClick = async () => {
     if (isLiking) return;
@@ -70,49 +58,8 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     setShowShareDialog(true);
   };
   
-  const handleReport = () => {
-    setShowReportDialog(true);
-  };
-  
-  // Simplify dialog state management
   const handleCloseShareDialog = () => {
     setShowShareDialog(false);
-  };
-  
-  const handleOpenReportDialog = () => {
-    setShowReportDialog(true);
-  };
-  
-  const handleCloseReportDialog = () => {
-    setShowReportDialog(false);
-    // Reset report form state
-    setReportReason("");
-    setReportDescription("");
-    setIsSubmittingReport(false);
-  };
-  
-  const submitReport = () => {
-    if (!reportReason) {
-      toast.error("Please select a reason for reporting");
-      return;
-    }
-    
-    setIsSubmittingReport(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Report submitted successfully. Thank you for keeping our community safe.");
-      
-      // Important: first close the dialog, then reset the form state
-      setShowReportDialog(false);
-      
-      // Reset form after a small delay to ensure the dialog closes first
-      setTimeout(() => {
-        setIsSubmittingReport(false);
-        setReportReason("");
-        setReportDescription("");
-      }, 100);
-    }, 1000);
   };
   
   const handleHidePost = () => {
@@ -172,9 +119,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => toast.info("Save Post feature would go here")}>
                 Save Post
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleOpenReportDialog}>
-                Report
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleHidePost}>
@@ -285,72 +229,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Report Dialog */}
-      <Dialog 
-        open={showReportDialog} 
-        onOpenChange={setShowReportDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Report Post</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for reporting this post.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <Select onValueChange={setReportReason} value={reportReason}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a reason" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="spam">Spam</SelectItem>
-                <SelectItem value="harassment">Harassment or Bullying</SelectItem>
-                <SelectItem value="false-info">False Information</SelectItem>
-                <SelectItem value="hate-speech">Hate Speech</SelectItem>
-                <SelectItem value="violence">Violence</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Textarea
-              placeholder="Please provide additional details (optional)"
-              value={reportDescription}
-              onChange={(e) => setReportDescription(e.target.value)}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={handleCloseReportDialog}
-              type="button"
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={submitReport}
-              disabled={isSubmittingReport || !reportReason}
-              className="gap-2"
-              type="button"
-            >
-              {isSubmittingReport ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Flag className="h-4 w-4" />
-                  Submit Report
-                </>
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
