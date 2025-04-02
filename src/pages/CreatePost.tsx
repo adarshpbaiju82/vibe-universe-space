@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageIcon, X, Loader2, ArrowLeft } from "lucide-react";
+import { ImageIcon, VideoIcon, X, Loader2, ArrowLeft } from "lucide-react";
 import { createPost } from "@/services/dataService";
 import { toast } from "sonner";
 
@@ -12,29 +12,32 @@ const CreatePost = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaPreview, setMediaPreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   if (!user) return null;
   
-  const handleImageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaInput = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
     const file = e.target.files?.[0];
     if (file) {
       // In a real app, we'd upload the file to a storage service
       const objectUrl = URL.createObjectURL(file);
-      setImagePreview(objectUrl);
-      setImageUrl(objectUrl);
+      setMediaPreview(objectUrl);
+      setMediaUrl(objectUrl);
+      setMediaType(type);
     }
   };
   
-  const removeImage = () => {
-    setImagePreview("");
-    setImageUrl("");
+  const removeMedia = () => {
+    setMediaPreview("");
+    setMediaUrl("");
+    setMediaType(null);
   };
   
   const handleSubmit = async () => {
-    if (!content.trim() && !imageUrl) return;
+    if (!content.trim() && !mediaUrl) return;
     
     setIsSubmitting(true);
     try {
@@ -43,7 +46,8 @@ const CreatePost = () => {
         user.username,
         user.avatar,
         content,
-        imageUrl
+        mediaType === "image" ? mediaUrl : undefined,
+        mediaType === "video" ? mediaUrl : undefined
       );
       
       toast.success("Post created successfully!");
@@ -74,18 +78,26 @@ const CreatePost = () => {
           rows={5}
         />
         
-        {imagePreview && (
+        {mediaPreview && (
           <div className="relative mb-3 rounded-md overflow-hidden">
-            <img 
-              src={imagePreview} 
-              alt="Upload preview" 
-              className="max-h-80 rounded-md object-contain bg-secondary w-full"
-            />
+            {mediaType === "image" ? (
+              <img 
+                src={mediaPreview} 
+                alt="Upload preview" 
+                className="max-h-80 rounded-md object-contain bg-secondary w-full"
+              />
+            ) : (
+              <video 
+                src={mediaPreview} 
+                className="max-h-80 rounded-md object-contain bg-secondary w-full"
+                controls
+              />
+            )}
             <Button
               variant="secondary"
               size="icon"
               className="absolute top-2 right-2 rounded-full opacity-80 hover:opacity-100"
-              onClick={removeImage}
+              onClick={removeMedia}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -94,7 +106,13 @@ const CreatePost = () => {
         
         <div className="flex justify-between items-center mt-4">
           <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground" 
+              asChild
+              disabled={!!mediaUrl}
+            >
               <label>
                 <ImageIcon className="h-4 w-4 mr-1" />
                 <span>Image</span>
@@ -102,7 +120,28 @@ const CreatePost = () => {
                   type="file" 
                   accept="image/*" 
                   className="hidden" 
-                  onChange={handleImageInput}
+                  onChange={(e) => handleMediaInput(e, "image")}
+                  disabled={!!mediaUrl}
+                />
+              </label>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground" 
+              asChild
+              disabled={!!mediaUrl}
+            >
+              <label>
+                <VideoIcon className="h-4 w-4 mr-1" />
+                <span>Video</span>
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  className="hidden" 
+                  onChange={(e) => handleMediaInput(e, "video")}
+                  disabled={!!mediaUrl}
                 />
               </label>
             </Button>
@@ -111,7 +150,7 @@ const CreatePost = () => {
           <Button 
             onClick={handleSubmit}
             className="vibe-button"
-            disabled={isSubmitting || (!content.trim() && !imageUrl)}
+            disabled={isSubmitting || (!content.trim() && !mediaUrl)}
           >
             {isSubmitting ? (
               <>

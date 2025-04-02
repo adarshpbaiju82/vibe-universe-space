@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageIcon, X, Loader2 } from "lucide-react";
+import { ImageIcon, VideoIcon, X, Loader2 } from "lucide-react";
 import { createPost, Post } from "@/services/dataService";
 import { toast } from "sonner";
 
@@ -16,42 +16,43 @@ interface CreatePostProps {
 const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { user } = useAuth();
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaPreview, setMediaPreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   if (!user) return null;
   
-  const handleImageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaInput = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
     const file = e.target.files?.[0];
     if (file) {
       // In a real app, we'd upload the file to a storage service
-      // and get back a URL. For this demo, we'll use a URL constructor
-      // to create an object URL for local preview.
       const objectUrl = URL.createObjectURL(file);
-      setImagePreview(objectUrl);
-      
-      // In a real app, this would be the URL returned from the upload service
-      setImageUrl(objectUrl);
+      setMediaPreview(objectUrl);
+      setMediaUrl(objectUrl);
+      setMediaType(type);
     }
   };
   
-  const removeImage = () => {
-    setImagePreview("");
-    setImageUrl("");
+  const removeMedia = () => {
+    setMediaPreview("");
+    setMediaUrl("");
+    setMediaType(null);
   };
   
   const handleSubmit = async () => {
-    if (!content.trim() && !imageUrl) return;
+    if (!content.trim() && !mediaUrl) return;
     
     setIsSubmitting(true);
     try {
+      // Create a newPost object with the appropriate media type
       const newPost = await createPost(
         user.id,
         user.username,
         user.avatar,
         content,
-        imageUrl
+        mediaType === "image" ? mediaUrl : undefined,
+        mediaType === "video" ? mediaUrl : undefined
       );
       
       if (onPostCreated) {
@@ -62,8 +63,9 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       
       // Reset form
       setContent("");
-      setImageUrl("");
-      setImagePreview("");
+      setMediaUrl("");
+      setMediaPreview("");
+      setMediaType(null);
       
     } catch (error) {
       toast.error("Failed to create post. Please try again.");
@@ -91,18 +93,26 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
               rows={3}
             />
             
-            {imagePreview && (
+            {mediaPreview && (
               <div className="relative mb-3 rounded-md overflow-hidden">
-                <img 
-                  src={imagePreview} 
-                  alt="Upload preview" 
-                  className="max-h-60 rounded-md object-contain bg-secondary w-full"
-                />
+                {mediaType === "image" ? (
+                  <img 
+                    src={mediaPreview} 
+                    alt="Upload preview" 
+                    className="max-h-60 rounded-md object-contain bg-secondary w-full"
+                  />
+                ) : (
+                  <video 
+                    src={mediaPreview} 
+                    className="max-h-60 rounded-md object-contain bg-secondary w-full"
+                    controls
+                  />
+                )}
                 <Button
                   variant="secondary"
                   size="icon"
                   className="absolute top-2 right-2 rounded-full opacity-80 hover:opacity-100"
-                  onClick={removeImage}
+                  onClick={removeMedia}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -111,7 +121,13 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
             
             <div className="flex justify-between items-center">
               <div className="flex space-x-2">
-                <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground" 
+                  asChild
+                  disabled={!!mediaUrl}
+                >
                   <label>
                     <ImageIcon className="h-4 w-4 mr-1" />
                     <span>Image</span>
@@ -119,7 +135,28 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                       type="file" 
                       accept="image/*" 
                       className="hidden" 
-                      onChange={handleImageInput}
+                      onChange={(e) => handleMediaInput(e, "image")}
+                      disabled={!!mediaUrl}
+                    />
+                  </label>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground" 
+                  asChild
+                  disabled={!!mediaUrl}
+                >
+                  <label>
+                    <VideoIcon className="h-4 w-4 mr-1" />
+                    <span>Video</span>
+                    <input 
+                      type="file" 
+                      accept="video/*" 
+                      className="hidden" 
+                      onChange={(e) => handleMediaInput(e, "video")}
+                      disabled={!!mediaUrl}
                     />
                   </label>
                 </Button>
@@ -128,7 +165,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
               <Button 
                 onClick={handleSubmit}
                 className="vibe-button"
-                disabled={isSubmitting || (!content.trim() && !imageUrl)}
+                disabled={isSubmitting || (!content.trim() && !mediaUrl)}
               >
                 {isSubmitting ? (
                   <>

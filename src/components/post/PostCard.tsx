@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Flag, X, Check } from "lucide-react";
@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toggleLike, Post } from "@/services/dataService";
 import { toast } from "sonner";
 import Comments from "./Comments";
+import { VideoPlayer } from "@/components/ui/video-player";
 
 interface PostCardProps {
   post: Post;
@@ -47,6 +48,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   const [reportDescription, setReportDescription] = useState("");
   const [isHidden, setIsHidden] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const bodyRef = useRef<HTMLBodyElement | null>(document.querySelector("body"));
   
   const handleLikeClick = async () => {
     if (isLiking) return;
@@ -71,6 +73,19 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   
   const handleReport = () => {
     setShowReportDialog(true);
+  };
+  
+  // Fix for modal interaction issue: when dialog opens/closes, manage document overflow
+  const handleDialogChange = (open: boolean) => {
+    // When closing dialog
+    if (!open) {
+      // Small delay to ensure dialog closing animation completes
+      setTimeout(() => {
+        if (bodyRef.current) {
+          bodyRef.current.style.pointerEvents = 'auto';
+        }
+      }, 100);
+    }
   };
   
   const submitReport = () => {
@@ -156,13 +171,23 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <div className="mb-4">
           <p className="mb-3">{post.content}</p>
           
-          {post.image && (
+          {post.image && !post.video && (
             <div className="relative rounded-lg overflow-hidden mb-2 aspect-video bg-muted/30">
               <img 
                 src={post.image} 
                 alt="Post content" 
                 className="w-full h-full object-cover"
                 loading="lazy"
+              />
+            </div>
+          )}
+          
+          {post.video && (
+            <div className="rounded-lg overflow-hidden mb-2 aspect-video">
+              <VideoPlayer 
+                src={post.video} 
+                poster={post.image} 
+                className="w-full aspect-video"
               />
             </div>
           )}
@@ -202,7 +227,13 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
       </div>
       
       {/* Share Dialog */}
-      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+      <Dialog 
+        open={showShareDialog} 
+        onOpenChange={(open) => {
+          setShowShareDialog(open);
+          handleDialogChange(open);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Share Post</DialogTitle>
@@ -245,7 +276,13 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
       </Dialog>
       
       {/* Report Dialog */}
-      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+      <Dialog 
+        open={showReportDialog} 
+        onOpenChange={(open) => {
+          setShowReportDialog(open);
+          handleDialogChange(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Report Post</DialogTitle>
