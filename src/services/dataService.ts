@@ -13,15 +13,12 @@ export interface User {
 
 export interface Post {
   id: string;
-  userId: string;
-  username: string;
-  userAvatar: string;
+  user: User;
   content: string;
-  image?: string;
-  video?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   likes: number;
   comments: number;
-  isLiked: boolean;
   createdAt: Date;
 }
 
@@ -70,7 +67,7 @@ const generateUser = (): User => {
   return {
     id: faker.string.uuid(),
     name: faker.person.fullName(),
-    username: faker.internet.userName(),
+    username: faker.internet.username(),
     avatar: faker.image.avatar(),
     bio: faker.lorem.sentence(),
     followerCount: faker.number.int({ min: 0, max: 10000 }),
@@ -80,17 +77,23 @@ const generateUser = (): User => {
 
 // Generate a random post
 const generatePost = (): Post => {
+  const randomMediaType = faker.helpers.arrayElement(['image', 'video', undefined]) as 'image' | 'video' | undefined;
+  let mediaUrl;
+  
+  if (randomMediaType === 'image') {
+    mediaUrl = faker.image.urlLoremFlickr({ category: 'nature' });
+  } else if (randomMediaType === 'video') {
+    mediaUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+  }
+  
   return {
     id: faker.string.uuid(),
-    userId: faker.string.uuid(),
-    username: faker.internet.userName(),
-    userAvatar: faker.image.avatar(),
+    user: generateUser(),
     content: faker.lorem.paragraph(),
-    image: Math.random() > 0.5 ? faker.image.urlLoremFlickr({ category: 'nature' }) : undefined,
-    video: Math.random() > 0.8 ? 'https://www.w3schools.com/html/mov_bbb.mp4' : undefined,
+    mediaUrl,
+    mediaType: randomMediaType,
     likes: faker.number.int({ min: 0, max: 500 }),
     comments: faker.number.int({ min: 0, max: 100 }),
-    isLiked: Math.random() > 0.5,
     createdAt: faker.date.recent(),
   };
 };
@@ -109,44 +112,31 @@ export const getUserPosts = (userId: string, count: number = 10): Post[] => {
   const posts: Post[] = [];
   for (let i = 0; i < count; i++) {
     const post = generatePost();
-    post.userId = userId;
+    post.user.id = userId;
     posts.push(post);
   }
   return posts;
 };
 
 // Create post
-export const createPost = (
+export const createPost = async (
   content: string, 
   mediaUrl?: string, 
   mediaType?: 'image' | 'video'
 ): Promise<Post> => {
   // Simulate API call delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const post: Post = {
-        id: faker.string.uuid(),
-        userId: faker.string.uuid(),
-        username: faker.internet.userName(),
-        userAvatar: faker.image.avatar(),
-        content,
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-        createdAt: new Date(),
-      };
-
-      if (mediaUrl && mediaType) {
-        if (mediaType === 'image') {
-          post.image = mediaUrl;
-        } else if (mediaType === 'video') {
-          post.video = mediaUrl;
-        }
-      }
-
-      resolve(post);
-    }, 500);
-  });
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  
+  return {
+    id: faker.string.uuid(),
+    user: generateUser(),
+    content,
+    mediaUrl,
+    mediaType,
+    likes: 0,
+    comments: 0,
+    createdAt: new Date(),
+  };
 };
 
 // Toggle like on a post
@@ -157,8 +147,7 @@ export const toggleLike = async (postId: string): Promise<Post> => {
   // In a real app, this would make a call to update the like status
   const post = generatePost();
   post.id = postId;
-  post.isLiked = !post.isLiked;
-  post.likes = post.isLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
+  post.likes = post.likes > 0 ? post.likes - 1 : post.likes + 1;
   
   return post;
 };
@@ -177,7 +166,7 @@ export const getComments = async (postId: string): Promise<Comment[]> => {
       id: faker.string.uuid(),
       postId,
       userId: faker.string.uuid(),
-      username: faker.internet.userName(),
+      username: faker.internet.username(),
       userAvatar: faker.image.avatar(),
       content: faker.lorem.sentence(),
       likes: faker.number.int({ min: 0, max: 50 }),
@@ -191,9 +180,6 @@ export const getComments = async (postId: string): Promise<Comment[]> => {
 // Add a comment to a post
 export const addComment = async (
   postId: string,
-  userId: string,
-  username: string,
-  userAvatar: string,
   content: string
 ): Promise<Comment> => {
   // Simulate API call delay
@@ -202,9 +188,9 @@ export const addComment = async (
   return {
     id: faker.string.uuid(),
     postId,
-    userId,
-    username,
-    userAvatar,
+    userId: faker.string.uuid(),
+    username: faker.internet.username(),
+    userAvatar: faker.image.avatar(),
     content,
     likes: 0,
     createdAt: new Date(),
@@ -224,7 +210,7 @@ export const getUserSuggestions = async (): Promise<UserSuggestion[]> => {
     suggestions.push({
       id: faker.string.uuid(),
       name: faker.person.fullName(),
-      username: faker.internet.userName(),
+      username: faker.internet.username(),
       avatar: faker.image.avatar(),
       bio: faker.lorem.sentence(),
       isFollowing: Math.random() > 0.7,
@@ -288,7 +274,7 @@ export const getNotifications = async (): Promise<Notification[]> => {
     notifications.push({
       id: faker.string.uuid(),
       userId: faker.string.uuid(),
-      username: faker.internet.userName(),
+      username: faker.internet.username(),
       userAvatar: faker.image.avatar(),
       type,
       content: contentByType[type],
@@ -313,7 +299,7 @@ export const updateUserProfile = async (
   return {
     id: userId,
     name: data.name || faker.person.fullName(),
-    username: data.username || faker.internet.userName(),
+    username: data.username || faker.internet.username(),
     avatar: data.avatar || faker.image.avatar(),
     bio: data.bio,
     followerCount: faker.number.int({ min: 0, max: 10000 }),

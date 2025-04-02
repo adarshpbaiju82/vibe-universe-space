@@ -41,7 +41,6 @@ const Home = () => {
       
       <div className="space-y-4">
         {loading ? (
-          // Show skeletons while loading
           Array.from({ length: 3 }).map((_, index) => (
             <PostCardSkeleton key={index} />
           ))
