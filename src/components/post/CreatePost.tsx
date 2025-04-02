@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,12 +46,9 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     try {
       // Create a newPost object with the appropriate media type
       const newPost = await createPost(
-        user.id,
-        user.username,
-        user.avatar,
         content,
-        mediaType === "image" ? mediaUrl : undefined,
-        mediaType === "video" ? mediaUrl : undefined
+        mediaUrl,
+        mediaType || undefined
       );
       
       if (onPostCreated) {

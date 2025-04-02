@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,12 +41,9 @@ const CreatePost = () => {
     setIsSubmitting(true);
     try {
       const newPost = await createPost(
-        user.id,
-        user.username,
-        user.avatar,
         content,
-        mediaType === "image" ? mediaUrl : undefined,
-        mediaType === "video" ? mediaUrl : undefined
+        mediaUrl,
+        mediaType || undefined
       );
       
       toast.success("Post created successfully!");
