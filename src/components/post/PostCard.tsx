@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -73,18 +74,21 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     setShowReportDialog(true);
   };
   
-  const handleDialogChange = (open: boolean, dialogType: 'share' | 'report') => {
-    if (dialogType === 'share') {
-      setShowShareDialog(open);
-    } else {
-      setShowReportDialog(open);
-      
-      if (!open) {
-        setReportReason("");
-        setReportDescription("");
-        setIsSubmittingReport(false);
-      }
-    }
+  // Simplify dialog state management
+  const handleCloseShareDialog = () => {
+    setShowShareDialog(false);
+  };
+  
+  const handleOpenReportDialog = () => {
+    setShowReportDialog(true);
+  };
+  
+  const handleCloseReportDialog = () => {
+    setShowReportDialog(false);
+    // Reset report form state
+    setReportReason("");
+    setReportDescription("");
+    setIsSubmittingReport(false);
   };
   
   const submitReport = () => {
@@ -95,12 +99,19 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     
     setIsSubmittingReport(true);
     
+    // Simulate API call
     setTimeout(() => {
-      setIsSubmittingReport(false);
-      setReportReason("");
-      setReportDescription("");
-      setShowReportDialog(false);
       toast.success("Report submitted successfully. Thank you for keeping our community safe.");
+      
+      // Important: first close the dialog, then reset the form state
+      setShowReportDialog(false);
+      
+      // Reset form after a small delay to ensure the dialog closes first
+      setTimeout(() => {
+        setIsSubmittingReport(false);
+        setReportReason("");
+        setReportDescription("");
+      }, 100);
     }, 1000);
   };
   
@@ -124,6 +135,15 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <Button variant="link" size="sm" onClick={handleUndoHide}>
           Undo
         </Button>
+      </Card>
+    );
+  }
+  
+  // Guard against missing user data
+  if (!post.user || !post.user.name) {
+    return (
+      <Card className="mb-4 p-4 text-center">
+        <p className="text-muted-foreground">Error loading post</p>
       </Card>
     );
   }
@@ -153,7 +173,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               <DropdownMenuItem onClick={() => toast.info("Save Post feature would go here")}>
                 Save Post
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleReport}>
+              <DropdownMenuItem onClick={handleOpenReportDialog}>
                 Report
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -222,9 +242,10 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <Comments postId={post.id} commentCount={post.comments} />
       </div>
       
+      {/* Share Dialog */}
       <Dialog 
         open={showShareDialog} 
-        onOpenChange={(open) => handleDialogChange(open, 'share')}
+        onOpenChange={setShowShareDialog}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -240,7 +261,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               </div>
               <Button onClick={() => {
                 toast.success("Link copied to clipboard!");
-                setShowShareDialog(false);
+                handleCloseShareDialog();
               }}>
                 Copy Link
               </Button>
@@ -267,9 +288,10 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         </DialogContent>
       </Dialog>
       
+      {/* Report Dialog */}
       <Dialog 
         open={showReportDialog} 
-        onOpenChange={(open) => handleDialogChange(open, 'report')}
+        onOpenChange={setShowReportDialog}
       >
         <DialogContent>
           <DialogHeader>
@@ -302,11 +324,11 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowReportDialog(false);
-              setReportReason("");
-              setReportDescription("");
-            }}>
+            <Button 
+              variant="outline" 
+              onClick={handleCloseReportDialog}
+              type="button"
+            >
               Cancel
             </Button>
             <Button 
@@ -314,6 +336,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
               onClick={submitReport}
               disabled={isSubmittingReport || !reportReason}
               className="gap-2"
+              type="button"
             >
               {isSubmittingReport ? (
                 <>
