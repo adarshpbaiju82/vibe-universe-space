@@ -1,4 +1,3 @@
-
 import { faker } from '@faker-js/faker';
 
 export interface User {
@@ -180,6 +179,9 @@ export const getComments = async (postId: string): Promise<Comment[]> => {
 // Add a comment to a post
 export const addComment = async (
   postId: string,
+  userId: string,
+  username: string,
+  userAvatar: string,
   content: string
 ): Promise<Comment> => {
   // Simulate API call delay
@@ -188,9 +190,9 @@ export const addComment = async (
   return {
     id: faker.string.uuid(),
     postId,
-    userId: faker.string.uuid(),
-    username: faker.internet.username(),
-    userAvatar: faker.image.avatar(),
+    userId,
+    username,
+    userAvatar,
     content,
     likes: 0,
     createdAt: new Date(),
