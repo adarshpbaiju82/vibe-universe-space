@@ -1,13 +1,14 @@
 
 import { useState, useEffect, useRef } from "react";
-import { getChatMessages, sendMessage, Message, Chat, getUserChats } from "@/services/dataService";
+import { getChatMessages, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Send, Info } from "lucide-react";
+import { Send, Info } from "lucide-react";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatMessagesProps {
   chatId: string;
@@ -22,6 +23,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   // Fetch messages and chat info
   useEffect(() => {
@@ -114,32 +116,26 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="border-b p-4 flex items-center">
-        {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="mr-2 md:hidden">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        
-        {loading ? (
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-6 w-32" />
-          </div>
-        ) : chatPartner ? (
+      <div className="border-b p-3 md:p-4 flex items-center">
+        {chatPartner ? (
           <div className="flex items-center">
-            <Avatar className="mr-3">
+            <Avatar className="mr-3 h-8 w-8 md:h-10 md:w-10">
               <AvatarImage src={chatPartner.avatar} alt={chatPartner.name} />
               <AvatarFallback>{chatPartner.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium">{chatPartner.name}</h3>
+              <h3 className="font-medium text-sm md:text-base">{chatPartner.name}</h3>
               <p className="text-xs text-muted-foreground">@{chatPartner.username}</p>
             </div>
           </div>
+        ) : loading ? (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-6 w-32" />
+          </div>
         ) : (
           <div className="flex items-center text-muted-foreground">
-            <span>Chat</span>
+            <span>Select a Chat</span>
           </div>
         )}
         
@@ -151,17 +147,17 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
       </div>
       
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 md:space-y-6">
         {loading ? (
           // Skeleton loading for messages
           <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                <div className={`flex gap-3 max-w-[80%] ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+                <div className={`flex gap-2 max-w-[85%] ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
                   {i % 2 === 0 && <Skeleton className="h-8 w-8 rounded-full" />}
                   <div>
-                    <Skeleton className={`h-24 w-60 rounded-lg ${i % 2 === 0 ? 'rounded-tl-none' : 'rounded-tr-none'}`} />
-                    <Skeleton className="h-4 w-16 mt-1" />
+                    <Skeleton className={`h-16 w-48 rounded-lg ${i % 2 === 0 ? 'rounded-tl-none' : 'rounded-tr-none'}`} />
+                    <Skeleton className="h-3 w-12 mt-1" />
                   </div>
                 </div>
               </div>
@@ -170,14 +166,14 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : messages.length > 0 ? (
           <>
             {messageGroups.map((group, groupIndex) => (
-              <div key={groupIndex} className="space-y-4">
+              <div key={groupIndex} className="space-y-3 md:space-y-4">
                 <div className="text-center">
                   <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
                     {group.date}
                   </span>
                 </div>
                 
-                {group.messages.map((message, index) => {
+                {group.messages.map((message) => {
                   const isCurrentUser = message.senderId === 'currentUser';
                   
                   return (
@@ -185,9 +181,9 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
                       key={message.id} 
                       className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`flex gap-2 max-w-[80%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex gap-2 max-w-[85%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
                         {!isCurrentUser && (
-                          <Avatar className="h-8 w-8">
+                          <Avatar className="h-8 w-8 mt-1">
                             <AvatarImage src={chatPartner?.avatar} alt={chatPartner?.name} />
                             <AvatarFallback>
                               {chatPartner?.name.substring(0, 2).toUpperCase()}
@@ -202,7 +198,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
                                 : 'bg-muted rounded-tl-none'
                             }`}
                           >
-                            <p>{message.content}</p>
+                            <p className="text-sm md:text-base">{message.content}</p>
                           </div>
                           <p className={`text-xs mt-1 text-muted-foreground ${isCurrentUser ? 'text-right' : ''}`}>
                             {formatMessageDate(new Date(message.createdAt))}
@@ -227,11 +223,11 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
       </div>
       
       {/* Message Input */}
-      <div className="p-4 border-t">
+      <div className="p-3 md:p-4 border-t">
         <div className="flex items-end gap-2">
           <Textarea
             placeholder="Type a message..."
-            className="min-h-[60px] resize-none"
+            className="min-h-[50px] md:min-h-[60px] resize-none text-sm md:text-base py-2"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={(e) => {
@@ -242,11 +238,11 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
             }}
           />
           <Button
-            className="vibe-button h-10 w-10 p-0 rounded-full"
+            className="vibe-button h-9 w-9 md:h-10 md:w-10 p-0 rounded-full flex items-center justify-center"
             disabled={!messageText.trim() || sending}
             onClick={handleSendMessage}
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </div>

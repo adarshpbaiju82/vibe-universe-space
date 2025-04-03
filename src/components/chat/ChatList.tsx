@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatListProps {
   chats: Chat[];
@@ -16,6 +17,7 @@ interface ChatListProps {
 
 const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
   
   const filteredChats = searchQuery 
     ? chats.filter(chat => 
@@ -46,7 +48,7 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
   
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-3 md:p-4 border-b">
         <h2 className="text-xl font-bold mb-3">Messages</h2>
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -62,8 +64,8 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           // Skeleton loading states
-          Array.from({ length: 7 }).map((_, index) => (
-            <div key={index} className="flex items-center gap-3 p-4 border-b">
+          Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-3 p-3 md:p-4 border-b">
               <Skeleton className="h-12 w-12 rounded-full" />
               <div className="flex-1">
                 <Skeleton className="h-5 w-32 mb-1" />
@@ -79,7 +81,7 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
             return (
               <div
                 key={chat.id}
-                className={`flex items-center gap-3 p-4 border-b cursor-pointer hover:bg-accent/50 transition-colors ${
+                className={`flex items-center gap-3 p-3 md:p-4 border-b cursor-pointer hover:bg-accent/50 transition-colors ${
                   activeChatId === chat.id ? "bg-accent" : ""
                 }`}
                 onClick={() => onChatSelect(chat.id)}
@@ -109,8 +111,10 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
             );
           })
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">No conversations found</p>
+          <div className="flex items-center justify-center h-full p-4">
+            <p className="text-muted-foreground text-center">
+              {searchQuery ? "No conversations match your search" : "No conversations yet"}
+            </p>
           </div>
         )}
       </div>

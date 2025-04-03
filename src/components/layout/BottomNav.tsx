@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Compass, Bell, User, PlusSquare } from "lucide-react";
+import { Home, Compass, Bell, User, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,13 +8,18 @@ const BottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
   
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/chat") {
+      return location.pathname === "/chat" || location.pathname.startsWith("/chat/");
+    }
+    return location.pathname === path;
+  };
   
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/explore", icon: Compass, label: "Explore" },
-    { path: "/create", icon: PlusSquare, label: "Create" },
-    { path: "/notifications", icon: Bell, label: "Notifications" },
+    { path: "/chat", icon: MessageCircle, label: "Chat" },
+    { path: "/notifications", icon: Bell, label: "Alerts" },
     { path: `/profile/${user?.username || ''}`, icon: User, label: "Profile" },
   ];
   

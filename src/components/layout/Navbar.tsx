@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Bell, User } from "lucide-react";
+import { Bell, User, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,9 +23,15 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
           </Link>
         </div>
         
-        {/* Right: Notifications, Profile - Only visible on desktop */}
+        {/* Right: Notifications, Chat, Profile - Only visible on desktop */}
         {!isMobile && (
           <div className="flex items-center space-x-3">
+            <Link to="/chat">
+              <Button variant="ghost" size="icon" className="relative">
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+            </Link>
+            
             <Link to="/notifications">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
