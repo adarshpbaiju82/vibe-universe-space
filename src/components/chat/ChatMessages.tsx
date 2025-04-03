@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef } from "react";
-import { getChatMessages, sendMessage, Message } from "@/services/dataService";
+import { getChatMessages, getUserChats, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
-  // Fetch messages and chat info
   useEffect(() => {
     const fetchChatData = async () => {
       if (!chatId || !user) return;
@@ -39,7 +37,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         
         setMessages(chatMessages);
         
-        // Find the current chat to get partner info
         const currentChat = userChats.find(chat => chat.id === chatId);
         if (currentChat) {
           const partner = currentChat.participants.find(p => p.username !== 'you');
@@ -61,7 +58,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
     fetchChatData();
   }, [chatId, user]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -89,7 +85,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
     return format(date, "h:mm a");
   };
   
-  // Group messages by date
   const groupMessagesByDate = () => {
     const groups: { date: string; messages: Message[] }[] = [];
     
@@ -115,7 +110,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
       <div className="border-b p-3 md:p-4 flex items-center">
         {chatPartner ? (
           <div className="flex items-center">
@@ -126,6 +120,10 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
             <div>
               <h3 className="font-medium text-sm md:text-base">{chatPartner.name}</h3>
               <p className="text-xs text-muted-foreground">@{chatPartner.username}</p>
+              <div className="flex items-center text-xs text-green-500">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                Online
+              </div>
             </div>
           </div>
         ) : loading ? (
@@ -146,10 +144,8 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         </div>
       </div>
       
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 md:space-y-6">
         {loading ? (
-          // Skeleton loading for messages
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
@@ -222,30 +218,31 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         )}
       </div>
       
-      {/* Message Input */}
-      <div className="p-3 md:p-4 border-t">
-        <div className="flex items-end gap-2">
-          <Textarea
-            placeholder="Type a message..."
-            className="min-h-[50px] md:min-h-[60px] resize-none text-sm md:text-base py-2"
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button
-            className="vibe-button h-9 w-9 md:h-10 md:w-10 p-0 rounded-full flex items-center justify-center"
-            disabled={!messageText.trim() || sending}
-            onClick={handleSendMessage}
-          >
-            <Send className="h-4 w-4 md:h-5 md:w-5" />
-          </Button>
+      {chatPartner && (
+        <div className="p-3 md:p-4 border-t">
+          <div className="flex items-end gap-2">
+            <Textarea
+              placeholder="Type a message..."
+              className="min-h-[50px] md:min-h-[60px] resize-none text-sm md:text-base py-2"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <Button
+              className="vibe-button h-9 w-9 md:h-10 md:w-10 p-0 rounded-full flex items-center justify-center"
+              disabled={!messageText.trim() || sending}
+              onClick={handleSendMessage}
+            >
+              <Send className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

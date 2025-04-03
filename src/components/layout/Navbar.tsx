@@ -29,6 +29,7 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
             <Link to="/chat">
               <Button variant="ghost" size="icon" className="relative">
                 <MessageCircle className="h-5 w-5" />
+                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-vibe-500"></span>
               </Button>
             </Link>
             

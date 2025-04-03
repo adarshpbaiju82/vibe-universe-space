@@ -33,12 +33,13 @@ const ChatPage = () => {
         const userChats = await getUserChats(user.id);
         setChats(userChats);
         
-        // If no specific chat is selected, default to the first one
-        if (!activeChatId && userChats.length > 0) {
+        // If we have a chatId from the URL, use it
+        if (chatId) {
+          setActiveChatId(chatId);
+        } else if (userChats.length > 0 && !isMobile) {
+          // Only on desktop, auto-select the first chat if no chat is selected
           setActiveChatId(userChats[0].id);
-          if (!chatId) {
-            navigate(`/chat/${userChats[0].id}`, { replace: true });
-          }
+          navigate(`/chat/${userChats[0].id}`, { replace: true });
         }
       } catch (error) {
         console.error("Failed to fetch chats:", error);
@@ -48,28 +49,26 @@ const ChatPage = () => {
     };
     
     fetchChats();
-  }, [user]);
-  
-  // Update active chat when URL param changes
-  useEffect(() => {
-    if (chatId) {
-      setActiveChatId(chatId);
-    }
-  }, [chatId]);
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/signin" replace />;
-  }
+  }, [user, chatId]);
   
   const handleChatSelect = (id: string) => {
     setActiveChatId(id);
     navigate(`/chat/${id}`);
   };
   
+  const handleBackToList = () => {
+    setActiveChatId(undefined);
+    navigate("/chat");
+  };
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" replace />;
+  }
+  
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-150px)] bg-background rounded-lg border overflow-hidden">
+    <div className="max-w-6xl mx-auto h-[calc(100vh-64px)] md:h-[calc(100vh-150px)] bg-background rounded-lg border overflow-hidden">
       <div className="flex h-full">
-        {/* Mobile: Use Sheet for chat list */}
+        {/* Mobile: Use Sheet for chat list when in a chat */}
         {isMobile && activeChatId ? (
           <div className="w-full">
             <div className="flex items-center p-4 border-b">

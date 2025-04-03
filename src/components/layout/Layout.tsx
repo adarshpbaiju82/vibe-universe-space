@@ -13,6 +13,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const isFullWidthChatPage = location.pathname.includes("/chat/");
   
   // Scroll to top when route changes
   useEffect(() => {
@@ -28,30 +29,36 @@ const Layout = () => {
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Navbar - visible on all screen sizes */}
-      <Navbar onMenuToggle={() => {}} />
+      {/* Navbar - visible on all screen sizes except full-width chat pages on mobile */}
+      {!(isMobile && isFullWidthChatPage) && (
+        <Navbar onMenuToggle={() => {}} />
+      )}
       
       <div className="flex flex-1 w-full max-w-7xl mx-auto">
         {/* Sidebar - Hidden on mobile */}
-        <div className="hidden md:block md:relative md:w-64 xl:w-72 md:z-auto">
-          <Sidebar onCloseMobile={() => {}} />
-        </div>
+        {!(isMobile && isFullWidthChatPage) && (
+          <div className="hidden md:block md:relative md:w-64 xl:w-72 md:z-auto">
+            <Sidebar onCloseMobile={() => {}} />
+          </div>
+        )}
         
         {/* Main Content Area */}
-        <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
-          <div className="animate-fade-in pb-16 md:pb-0">
+        <main className={`flex-1 ${!(isMobile && isFullWidthChatPage) ? 'px-4 py-6 md:px-6 md:py-8' : 'p-0'}`}>
+          <div className={`${!(isMobile && isFullWidthChatPage) ? 'animate-fade-in pb-16 md:pb-0' : 'pb-0'}`}>
             <Outlet />
           </div>
         </main>
         
-        {/* Right Panel - Hidden on mobile */}
-        <div className="hidden lg:block lg:w-80 xl:w-96 p-4">
-          <RightPanel />
-        </div>
+        {/* Right Panel - Hidden on mobile and chat pages */}
+        {!(isMobile && isFullWidthChatPage) && (
+          <div className="hidden lg:block lg:w-80 xl:w-96 p-4">
+            <RightPanel />
+          </div>
+        )}
       </div>
       
-      {/* Bottom Mobile Navigation */}
-      <BottomNav />
+      {/* Bottom Mobile Navigation - Hidden on full-width chat pages */}
+      {!(isMobile && isFullWidthChatPage) && <BottomNav />}
     </div>
   );
 };

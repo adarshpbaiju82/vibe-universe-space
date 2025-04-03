@@ -15,6 +15,31 @@ interface ChatListProps {
   onChatSelect: (chatId: string) => void;
 }
 
+// List of suggested users to chat with when no chats exist
+const suggestedUsers = [
+  {
+    id: "suggested-1",
+    name: "Emma Johnson",
+    username: "emmaj",
+    avatar: "https://ui-avatars.com/api/?name=Emma+Johnson&background=random",
+    lastSeen: new Date()
+  },
+  {
+    id: "suggested-2",
+    name: "Michael Chen",
+    username: "mikechen",
+    avatar: "https://ui-avatars.com/api/?name=Michael+Chen&background=random",
+    lastSeen: new Date()
+  },
+  {
+    id: "suggested-3",
+    name: "Sofia Rodriguez",
+    username: "sofia_r",
+    avatar: "https://ui-avatars.com/api/?name=Sofia+Rodriguez&background=random",
+    lastSeen: new Date()
+  }
+];
+
 const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
@@ -27,6 +52,13 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
         )
       )
     : chats;
+  
+  const filteredSuggestions = searchQuery
+    ? suggestedUsers.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : suggestedUsers;
   
   const getOtherParticipant = (chat: Chat) => {
     return chat.participants.find(p => p.username !== 'you') || chat.participants[0];
@@ -75,6 +107,7 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
             </div>
           ))
         ) : filteredChats.length > 0 ? (
+          // Display actual chats
           filteredChats.map((chat) => {
             const otherUser = getOtherParticipant(chat);
             
@@ -111,11 +144,34 @@ const ChatList = ({ chats, loading, activeChatId, onChatSelect }: ChatListProps)
             );
           })
         ) : (
-          <div className="flex items-center justify-center h-full p-4">
-            <p className="text-muted-foreground text-center">
-              {searchQuery ? "No conversations match your search" : "No conversations yet"}
-            </p>
-          </div>
+          // Show suggested users when no chats exist
+          <>
+            <div className="p-3 border-b">
+              <p className="text-sm font-medium text-muted-foreground">Suggested Chats</p>
+            </div>
+            {filteredSuggestions.map(user => (
+              <div
+                key={user.id}
+                className="flex items-center gap-3 p-3 md:p-4 border-b cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={() => onChatSelect(user.id)}
+              >
+                <Avatar>
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium text-foreground truncate">{user.name}</h3>
+                  </div>
+                  <div className="flex items-center text-xs text-green-500">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                    Online
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </div>
     </div>
