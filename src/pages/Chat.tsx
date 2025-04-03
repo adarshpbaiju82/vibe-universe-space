@@ -5,15 +5,11 @@ import { getUserChats, Chat } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
 import ChatList from "@/components/chat/ChatList";
 import ChatMessages from "@/components/chat/ChatMessages";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const ChatPage = () => {
   const { chatId } = useParams();
@@ -65,76 +61,62 @@ const ChatPage = () => {
     return <Navigate to="/signin" replace />;
   }
   
-  return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-64px)] md:h-[calc(100vh-150px)] bg-background rounded-lg border overflow-hidden">
-      <div className="flex h-full">
-        {/* Mobile: Use Sheet for chat list when in a chat */}
-        {isMobile && activeChatId ? (
-          <div className="w-full">
-            <div className="flex items-center p-4 border-b">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <ArrowLeft className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[85%] sm:w-[385px] p-0">
-                  <div className="h-full">
-                    <ChatList 
-                      chats={chats} 
-                      loading={loading} 
-                      activeChatId={activeChatId}
-                      onChatSelect={handleChatSelect}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-              <h2 className="text-lg font-medium ml-2">Messages</h2>
-            </div>
-            <ChatMessages chatId={activeChatId} />
-          </div>
-        ) : (
-          <>
-            {/* Desktop: Side-by-side layout */}
-            {!isMobile && (
-              <div className="w-full sm:w-80 md:w-96 border-r">
-                <ChatList 
-                  chats={chats} 
-                  loading={loading} 
-                  activeChatId={activeChatId}
-                  onChatSelect={handleChatSelect}
-                />
-              </div>
-            )}
-            
-            {/* Mobile: Full-width chat list when no chat is selected */}
-            {isMobile && !activeChatId && (
-              <div className="w-full">
-                <ChatList 
-                  chats={chats} 
-                  loading={loading} 
-                  activeChatId={activeChatId}
-                  onChatSelect={handleChatSelect}
-                />
-              </div>
-            )}
-            
-            {/* Chat messages area */}
-            <div className={`${isMobile ? 'hidden' : 'flex'} sm:flex sm:flex-1 items-center justify-center`}>
-              {activeChatId ? (
-                <ChatMessages chatId={activeChatId} />
-              ) : (
-                <div className="text-center p-8">
-                  <h3 className="text-lg font-medium">Select a conversation</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Choose a chat from the sidebar to start messaging
-                  </p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+  // Mobile chat view with active chat
+  if (isMobile && activeChatId) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <ChatMessages chatId={activeChatId} onBack={handleBackToList} />
       </div>
+    );
+  }
+  
+  return (
+    <div className="flex h-[calc(100vh-64px)] md:h-[calc(100vh-150px)] bg-background rounded-lg overflow-hidden">
+      {/* Left sidebar - Chat list */}
+      <div className="w-full md:w-80 lg:w-96 border-r flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h1 className="text-xl font-bold">Messages</h1>
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Plus className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <ChatList 
+            chats={chats} 
+            loading={loading} 
+            activeChatId={activeChatId}
+            onChatSelect={handleChatSelect}
+          />
+        </div>
+      </div>
+      
+      {/* Right side - Chat messages or empty state */}
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-1 flex-col bg-muted/10">
+          {activeChatId ? (
+            <ChatMessages chatId={activeChatId} />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <ArrowLeft className="h-8 w-8 text-primary rotate-45" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
+              <p className="text-muted-foreground max-w-md">
+                Choose a chat from the sidebar or start a new conversation with your friends
+              </p>
+              <Button className="mt-6 vibe-button">
+                <Plus className="h-4 w-4 mr-2" />
+                Start New Chat
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

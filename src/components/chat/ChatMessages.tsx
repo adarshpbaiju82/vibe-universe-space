@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { getChatMessages, getUserChats, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,9 +6,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Info } from "lucide-react";
+import { 
+  Send, 
+  ArrowLeft, 
+  Phone, 
+  Video, 
+  MoreVertical, 
+  Image as ImageIcon,
+  Smile,
+  Paperclip
+} from "lucide-react";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface ChatMessagesProps {
   chatId: string;
@@ -109,51 +120,69 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   const messageGroups = groupMessagesByDate();
   
   return (
-    <div className="flex flex-col h-full">
-      <div className="border-b p-3 md:p-4 flex items-center">
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="border-b p-3 flex items-center gap-3">
+        {isMobile && (
+          <Button variant="ghost" size="icon" className="mr-1" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
         {chatPartner ? (
-          <div className="flex items-center">
-            <Avatar className="mr-3 h-8 w-8 md:h-10 md:w-10">
-              <AvatarImage src={chatPartner.avatar} alt={chatPartner.name} />
-              <AvatarFallback>{chatPartner.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-medium text-sm md:text-base">{chatPartner.name}</h3>
-              <p className="text-xs text-muted-foreground">@{chatPartner.username}</p>
-              <div className="flex items-center text-xs text-green-500">
-                <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-                Online
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Avatar>
+                  <AvatarImage src={chatPartner.avatar} alt={chatPartner.name} />
+                  <AvatarFallback>{chatPartner.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-background rounded-full bg-green-500"></div>
               </div>
+              
+              <div>
+                <h3 className="font-medium">{chatPartner.name}</h3>
+                <div className="flex items-center text-xs text-green-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
+                  Online now
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Phone className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Video className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         ) : loading ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-6 w-32" />
+            <div>
+              <Skeleton className="h-5 w-32 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </div>
           </div>
-        ) : (
-          <div className="flex items-center text-muted-foreground">
-            <span>Select a Chat</span>
-          </div>
-        )}
-        
-        <div className="ml-auto">
-          <Button variant="ghost" size="icon" title="Chat info">
-            <Info className="h-5 w-5" />
-          </Button>
-        </div>
+        ) : null}
       </div>
       
-      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 md:space-y-6">
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-background/95">
         {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
+          <div className="space-y-6">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                <div className={`flex gap-2 max-w-[85%] ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
-                  {i % 2 === 0 && <Skeleton className="h-8 w-8 rounded-full" />}
+                <div className={`flex gap-2 max-w-[80%] ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+                  {i % 2 === 0 && <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />}
                   <div>
-                    <Skeleton className={`h-16 w-48 rounded-lg ${i % 2 === 0 ? 'rounded-tl-none' : 'rounded-tr-none'}`} />
-                    <Skeleton className="h-3 w-12 mt-1" />
+                    <Skeleton className={`h-${i % 3 === 0 ? '12' : '20'} w-64 rounded-2xl ${i % 2 === 0 ? 'rounded-tl-sm' : 'rounded-tr-sm'}`} />
+                    <Skeleton className="h-3 w-16 mt-1 ml-1" />
                   </div>
                 </div>
               </div>
@@ -162,41 +191,51 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : messages.length > 0 ? (
           <>
             {messageGroups.map((group, groupIndex) => (
-              <div key={groupIndex} className="space-y-3 md:space-y-4">
+              <div key={groupIndex} className="space-y-4">
                 <div className="text-center">
-                  <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
+                  <span className="text-xs bg-muted/50 px-3 py-1 rounded-full text-muted-foreground">
                     {group.date}
                   </span>
                 </div>
                 
-                {group.messages.map((message) => {
+                {group.messages.map((message, messageIndex) => {
                   const isCurrentUser = message.senderId === 'currentUser';
+                  const showAvatar = !isCurrentUser && 
+                    (messageIndex === 0 || 
+                     group.messages[messageIndex - 1].senderId !== message.senderId);
                   
                   return (
                     <div 
                       key={message.id} 
                       className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`flex gap-2 max-w-[85%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
-                        {!isCurrentUser && (
+                      <div className={cn(
+                        "flex gap-2 max-w-[80%]",
+                        isCurrentUser ? 'flex-row-reverse' : ''
+                      )}>
+                        {!isCurrentUser && showAvatar ? (
                           <Avatar className="h-8 w-8 mt-1">
                             <AvatarImage src={chatPartner?.avatar} alt={chatPartner?.name} />
                             <AvatarFallback>
                               {chatPartner?.name.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                        )}
+                        ) : !isCurrentUser ? (
+                          <div className="w-8" /> // Spacer for alignment
+                        ) : null}
+                        
                         <div>
                           <div 
-                            className={`rounded-lg p-3 ${
+                            className={cn(
+                              "rounded-2xl p-3 break-words",
                               isCurrentUser
-                                ? 'bg-vibe-500 text-white rounded-tr-none'
-                                : 'bg-muted rounded-tl-none'
-                            }`}
+                                ? "bg-vibe-500 text-white rounded-tr-sm"
+                                : "bg-muted rounded-tl-sm"
+                            )}
                           >
-                            <p className="text-sm md:text-base">{message.content}</p>
+                            <p className="text-sm">{message.content}</p>
                           </div>
-                          <p className={`text-xs mt-1 text-muted-foreground ${isCurrentUser ? 'text-right' : ''}`}>
+                          <p className={`text-xs mt-1 text-muted-foreground ${isCurrentUser ? 'text-right mr-1' : 'ml-1'}`}>
                             {formatMessageDate(new Date(message.createdAt))}
                           </p>
                         </div>
@@ -211,19 +250,37 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <p className="text-muted-foreground">No messages yet</p>
-              <p className="text-sm mt-1">Start the conversation by sending a message below</p>
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold">No messages yet</h3>
+              <p className="text-muted-foreground mt-1">
+                Start the conversation by sending a message
+              </p>
             </div>
           </div>
         )}
       </div>
       
+      {/* Message input */}
       {chatPartner && (
-        <div className="p-3 md:p-4 border-t">
+        <div className="p-3 border-t bg-background">
           <div className="flex items-end gap-2">
+            <div className="flex gap-1.5 mr-1">
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <Smile className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
+            
             <Textarea
               placeholder="Type a message..."
-              className="min-h-[50px] md:min-h-[60px] resize-none text-sm md:text-base py-2"
+              className="min-h-[50px] resize-none text-sm py-3 rounded-xl"
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyDown={(e) => {
@@ -233,12 +290,13 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
                 }
               }}
             />
+            
             <Button
-              className="vibe-button h-9 w-9 md:h-10 md:w-10 p-0 rounded-full flex items-center justify-center"
+              className="rounded-full h-10 w-10 p-0 bg-vibe-500 hover:bg-vibe-600"
               disabled={!messageText.trim() || sending}
               onClick={handleSendMessage}
             >
-              <Send className="h-4 w-4 md:h-5 md:w-5" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
         </div>

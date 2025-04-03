@@ -35,16 +35,16 @@ const Layout = () => {
       )}
       
       <div className="flex flex-1 w-full max-w-7xl mx-auto">
-        {/* Sidebar - Hidden on mobile */}
+        {/* Sidebar - Hidden on mobile and chat pages */}
         {!(isMobile && isFullWidthChatPage) && (
           <div className="hidden md:block md:relative md:w-64 xl:w-72 md:z-auto">
             <Sidebar onCloseMobile={() => {}} />
           </div>
         )}
         
-        {/* Main Content Area */}
-        <main className={`flex-1 ${!(isMobile && isFullWidthChatPage) ? 'px-4 py-6 md:px-6 md:py-8' : 'p-0'}`}>
-          <div className={`${!(isMobile && isFullWidthChatPage) ? 'animate-fade-in pb-16 md:pb-0' : 'pb-0'}`}>
+        {/* Main Content Area - Full width on chat pages */}
+        <main className={`flex-1 ${isMobile && isFullWidthChatPage ? 'p-0' : 'px-4 py-6 md:px-6 md:py-8'}`}>
+          <div className={`${isMobile && isFullWidthChatPage ? '' : 'animate-fade-in pb-16 md:pb-0'}`}>
             <Outlet />
           </div>
         </main>
