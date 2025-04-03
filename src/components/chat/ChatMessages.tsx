@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { getChatMessages, getUserChats, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -121,7 +120,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
       <div className="border-b p-3 flex items-center gap-3">
         {isMobile && (
           <Button variant="ghost" size="icon" className="mr-1" onClick={onBack}>
@@ -172,7 +170,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : null}
       </div>
       
-      {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-background/95">
         {loading ? (
           <div className="space-y-6">
@@ -262,7 +259,6 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         )}
       </div>
       
-      {/* Message input */}
       {chatPartner && (
         <div className="p-3 border-t bg-background">
           <div className="flex items-end gap-2">

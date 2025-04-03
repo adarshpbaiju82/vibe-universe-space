@@ -32,10 +32,6 @@ const ChatPage = () => {
         // If we have a chatId from the URL, use it
         if (chatId) {
           setActiveChatId(chatId);
-        } else if (userChats.length > 0 && !isMobile) {
-          // Only on desktop, auto-select the first chat if no chat is selected
-          setActiveChatId(userChats[0].id);
-          navigate(`/chat/${userChats[0].id}`, { replace: true });
         }
       } catch (error) {
         console.error("Failed to fetch chats:", error);
@@ -73,7 +69,7 @@ const ChatPage = () => {
   return (
     <div className="flex h-[calc(100vh-64px)] md:h-[calc(100vh-150px)] bg-background rounded-lg overflow-hidden">
       {/* Left sidebar - Chat list */}
-      <div className="w-full md:w-80 lg:w-96 border-r flex flex-col">
+      <div className={`${activeChatId && isMobile ? 'hidden' : 'w-full'} md:w-80 lg:w-96 border-r flex flex-col`}>
         <div className="p-4 border-b flex items-center justify-between">
           <h1 className="text-xl font-bold">Messages</h1>
           <div className="flex items-center space-x-2">
@@ -96,10 +92,10 @@ const ChatPage = () => {
       </div>
       
       {/* Right side - Chat messages or empty state */}
-      {!isMobile && (
-        <div className="hidden md:flex md:flex-1 flex-col bg-muted/10">
+      {(!isMobile || activeChatId) && (
+        <div className={`${!activeChatId && isMobile ? 'hidden' : 'flex'} md:flex flex-1 flex-col bg-muted/10`}>
           {activeChatId ? (
-            <ChatMessages chatId={activeChatId} />
+            <ChatMessages chatId={activeChatId} onBack={handleBackToList} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
