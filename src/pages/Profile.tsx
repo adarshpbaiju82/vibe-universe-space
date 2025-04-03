@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { getUserPosts, Post } from "@/services/dataService";
+import { useParams, Link } from "react-router-dom";
+import { getUserPosts, getUserMedia, getUserLikes, Post } from "@/services/dataService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,8 +20,13 @@ const Profile = () => {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [mediaItems, setMediaItems] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mediaLoading, setMediaLoading] = useState(true);
+  const [likesLoading, setLikesLoading] = useState(true);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
   
   // For demo purposes, we'll pretend we're viewing the logged in user's profile
   // In a real app, we'd fetch the user data based on the username parameter
@@ -44,6 +49,42 @@ const Profile = () => {
     
     fetchUserPosts();
   }, [viewedUser]);
+  
+  useEffect(() => {
+    const fetchUserMedia = async () => {
+      if (!viewedUser || activeTab !== "media") return;
+      
+      try {
+        setMediaLoading(true);
+        const data = await getUserMedia(viewedUser.id);
+        setMediaItems(data);
+      } catch (error) {
+        console.error("Failed to fetch user media:", error);
+      } finally {
+        setMediaLoading(false);
+      }
+    };
+    
+    fetchUserMedia();
+  }, [viewedUser, activeTab]);
+  
+  useEffect(() => {
+    const fetchUserLikes = async () => {
+      if (!viewedUser || activeTab !== "likes") return;
+      
+      try {
+        setLikesLoading(true);
+        const data = await getUserLikes(viewedUser.id);
+        setLikedPosts(data);
+      } catch (error) {
+        console.error("Failed to fetch user likes:", error);
+      } finally {
+        setLikesLoading(false);
+      }
+    };
+    
+    fetchUserLikes();
+  }, [viewedUser, activeTab]);
   
   const handlePostUpdate = (updatedPost: Post) => {
     setPosts(posts.map(post => 
@@ -149,7 +190,7 @@ const Profile = () => {
       
       {/* Profile Content */}
       <div className="px-6">
-        <Tabs defaultValue="posts">
+        <Tabs defaultValue="posts" onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="posts">Posts</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
@@ -181,15 +222,78 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="media">
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">Media gallery coming soon</p>
-            </div>
+            {mediaLoading ? (
+              // Show skeletons while loading
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="aspect-square rounded-md" />
+                ))}
+              </div>
+            ) : mediaItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {mediaItems.map(media => (
+                  <div key={media.id} className="relative group aspect-square rounded-md overflow-hidden">
+                    {media.mediaType === 'image' ? (
+                      <img 
+                        src={media.mediaUrl} 
+                        alt="" 
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={media.mediaUrl} 
+                          alt="" 
+                          className="object-cover w-full h-full"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <div className="h-12 w-12 bg-black/70 rounded-full flex items-center justify-center">
+                            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                      <p className="text-white text-sm truncate">{media.content.substring(0, 60)}{media.content.length > 60 ? '...' : ''}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">No media posts yet</p>
+                {isOwnProfile && (
+                  <p className="mt-2">Share your first photo or video with the universe!</p>
+                )}
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="likes">
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">Liked posts coming soon</p>
-            </div>
+            {likesLoading ? (
+              // Show skeletons while loading
+              Array.from({ length: 3 }).map((_, index) => (
+                <PostCardSkeleton key={index} />
+              ))
+            ) : likedPosts.length > 0 ? (
+              likedPosts.map(post => (
+                <PostCard 
+                  key={post.id} 
+                  post={post} 
+                  onPostUpdate={handlePostUpdate} 
+                />
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">No liked posts yet</p>
+                {isOwnProfile && (
+                  <p className="mt-2">Like some posts to see them here!</p>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

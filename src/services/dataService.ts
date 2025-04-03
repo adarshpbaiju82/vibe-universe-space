@@ -61,6 +61,23 @@ export interface Notification {
   isRead: boolean;
 }
 
+export interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  createdAt: Date;
+  isRead: boolean;
+}
+
+export interface Chat {
+  id: string;
+  participants: User[];
+  lastMessage: string;
+  updatedAt: Date;
+  unreadCount: number;
+}
+
 // Generate a random user
 const generateUser = (): User => {
   return {
@@ -115,6 +132,59 @@ export const getUserPosts = (userId: string, count: number = 10): Post[] => {
     posts.push(post);
   }
   return posts;
+};
+
+// Get user media posts (only posts with media)
+export const getUserMedia = async (userId: string): Promise<Post[]> => {
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  
+  // Generate random posts with media
+  const mediaCount = faker.number.int({ min: 5, max: 12 });
+  const mediaPosts: Post[] = [];
+  
+  for (let i = 0; i < mediaCount; i++) {
+    const mediaType = faker.helpers.arrayElement(['image', 'video']) as 'image' | 'video';
+    const post = {
+      id: faker.string.uuid(),
+      user: {
+        id: userId,
+        name: faker.person.fullName(),
+        username: faker.internet.userName(),
+        avatar: faker.image.avatar(),
+      },
+      content: faker.lorem.sentence(),
+      mediaUrl: mediaType === 'image' 
+        ? faker.image.urlLoremFlickr({ category: faker.helpers.arrayElement(['nature', 'people', 'city']) }) 
+        : 'https://www.w3schools.com/html/mov_bbb.mp4',
+      mediaType,
+      likes: faker.number.int({ min: 0, max: 500 }),
+      comments: faker.number.int({ min: 0, max: 100 }),
+      createdAt: faker.date.recent(),
+    };
+    mediaPosts.push(post);
+  }
+  
+  return mediaPosts;
+};
+
+// Get user likes
+export const getUserLikes = async (userId: string): Promise<Post[]> => {
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  
+  // Generate random liked posts
+  const likeCount = faker.number.int({ min: 3, max: 8 });
+  const likedPosts: Post[] = [];
+  
+  for (let i = 0; i < likeCount; i++) {
+    const post = generatePost();
+    // Make sure these posts are liked
+    post.likes = faker.number.int({ min: 1, max: 500 });
+    likedPosts.push(post);
+  }
+  
+  return likedPosts;
 };
 
 // Create post
@@ -306,5 +376,76 @@ export const updateUserProfile = async (
     bio: data.bio,
     followerCount: faker.number.int({ min: 0, max: 10000 }),
     followingCount: faker.number.int({ min: 0, max: 1000 }),
+  };
+};
+
+// Get user chats
+export const getUserChats = async (userId: string): Promise<Chat[]> => {
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  
+  // Generate random chats
+  const chatCount = faker.number.int({ min: 3, max: 8 });
+  const chats: Chat[] = [];
+  
+  for (let i = 0; i < chatCount; i++) {
+    chats.push({
+      id: faker.string.uuid(),
+      participants: [
+        { 
+          id: userId, 
+          name: 'You', 
+          username: 'you', 
+          avatar: faker.image.avatar() 
+        },
+        generateUser()
+      ],
+      lastMessage: faker.lorem.sentence(),
+      updatedAt: faker.date.recent(),
+      unreadCount: faker.helpers.rangeToNumber({ min: 0, max: 5 }),
+    });
+  }
+  
+  return chats.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+};
+
+// Get messages for a chat
+export const getChatMessages = async (chatId: string): Promise<Message[]> => {
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  
+  // Generate random messages
+  const messageCount = faker.number.int({ min: 5, max: 20 });
+  const messages: Message[] = [];
+  
+  for (let i = 0; i < messageCount; i++) {
+    messages.push({
+      id: faker.string.uuid(),
+      senderId: faker.helpers.arrayElement([
+        faker.string.uuid(), // random user
+        'currentUser' // current user
+      ]),
+      receiverId: faker.string.uuid(),
+      content: faker.lorem.sentences({ min: 1, max: 3 }),
+      createdAt: faker.date.recent(),
+      isRead: true,
+    });
+  }
+  
+  return messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+};
+
+// Send message
+export const sendMessage = async (chatId: string, content: string): Promise<Message> => {
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  
+  return {
+    id: faker.string.uuid(),
+    senderId: 'currentUser',
+    receiverId: faker.string.uuid(),
+    content,
+    createdAt: new Date(),
+    isRead: false,
   };
 };
