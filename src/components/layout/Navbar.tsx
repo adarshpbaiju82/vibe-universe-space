@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Bell, User, Search } from "lucide-react";
+import { Bell, User, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,7 +11,7 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onMenuToggle }: NavbarProps) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isMobile = useIsMobile();
   const location = useLocation();
   const isActive = (path: string) => location.pathname.startsWith(path);
@@ -40,7 +40,7 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
           </div>
         )}
         
-        {/* Right: Notifications, Profile */}
+        {/* Right: Notifications, Profile, Logout */}
         <div className="flex items-center space-x-2">
           <Link to="/notifications">
             <Button 
@@ -67,6 +67,17 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
               <User className="h-5 w-5" />
             </Button>
           </Link>
+          
+          {/* Logout Button - visible on all screen sizes */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20"
+            onClick={() => logout()}
+            title="Logout"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </div>
     </nav>

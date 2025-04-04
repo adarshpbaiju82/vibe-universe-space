@@ -1,12 +1,12 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Compass, Bell, User, PlusSquare } from "lucide-react";
+import { Home, Compass, Bell, User, PlusSquare, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const BottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -37,6 +37,14 @@ const BottomNav = () => {
             <span className="text-xs">{item.label}</span>
           </Link>
         ))}
+        {/* Logout Button for mobile */}
+        <button
+          className="flex flex-col items-center justify-center w-full h-full text-red-500"
+          onClick={() => logout()}
+        >
+          <LogOut className="h-5 w-5 mb-1" />
+          <span className="text-xs">Logout</span>
+        </button>
       </div>
     </div>
   );

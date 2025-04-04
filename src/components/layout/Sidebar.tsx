@@ -63,19 +63,19 @@ const Sidebar = ({ onCloseMobile }: SidebarProps) => {
             </Link>
           );
         })}
+        
+        {/* Logout Button - Now more prominent */}
+        <Button 
+          variant="destructive" 
+          className="w-full justify-start mt-4"
+          onClick={() => {
+            logout();
+          }}
+        >
+          <LogOut className="mr-3 h-5 w-5" />
+          Logout
+        </Button>
       </nav>
-      
-      {/* Logout */}
-      <Button 
-        variant="ghost" 
-        className="w-full justify-start text-muted-foreground mt-auto"
-        onClick={() => {
-          logout();
-        }}
-      >
-        <LogOut className="mr-3 h-5 w-5" />
-        Logout
-      </Button>
     </div>
   );
 };
