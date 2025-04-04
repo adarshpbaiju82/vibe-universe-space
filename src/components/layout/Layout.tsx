@@ -9,7 +9,7 @@ import BottomNav from "./BottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, setIntendedPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -22,9 +22,11 @@ const Layout = () => {
   useEffect(() => {
     // Redirect to sign in if not authenticated
     if (!isAuthenticated) {
+      // Save the current path before redirecting
+      setIntendedPath(location.pathname);
       navigate("/signin");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname, setIntendedPath]);
   
   return (
     <div className="flex flex-col min-h-screen bg-background">

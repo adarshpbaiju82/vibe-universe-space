@@ -20,6 +20,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
+  setIntendedPath: (path: string) => void;
 }
 
 // Mock user data
@@ -66,6 +67,13 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   }, []);
 
+  // Store and retrieve the intended path
+  const setIntendedPath = (path: string) => {
+    if (path !== '/signin' && path !== '/signup') {
+      localStorage.setItem("intendedPath", path);
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       // Simulate API call with delay
@@ -81,7 +89,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       setUser(userWithoutSensitiveInfo);
       localStorage.setItem("user", JSON.stringify(userWithoutSensitiveInfo));
       toast.success("Successfully logged in!");
-      navigate("/");
+      
+      // Redirect to intended path if it exists, otherwise go to home
+      const intendedPath = localStorage.getItem("intendedPath") || "/";
+      localStorage.removeItem("intendedPath"); // Clear the stored path
+      navigate(intendedPath);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed");
       throw error;
@@ -115,7 +127,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
       toast.success("Account created successfully!");
-      navigate("/");
+      
+      // Redirect to intended path if it exists, otherwise go to home
+      const intendedPath = localStorage.getItem("intendedPath") || "/";
+      localStorage.removeItem("intendedPath"); // Clear the stored path
+      navigate(intendedPath);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Signup failed");
       throw error;
@@ -130,7 +146,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, setIntendedPath }}>
       {children}
     </AuthContext.Provider>
   );
