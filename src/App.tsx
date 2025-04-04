@@ -14,7 +14,6 @@ import Settings from "./pages/Settings";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import CreatePost from "./pages/CreatePost";
-import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 // Create a new QueryClient instance
@@ -38,8 +37,6 @@ const App = () => (
               <Route path="/profile/:username" element={<Profile />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/create" element={<CreatePost />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/chat/:chatId" element={<Chat />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

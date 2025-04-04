@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Bell, User, MessageCircle, Search } from "lucide-react";
+import { Bell, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,22 +40,8 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
           </div>
         )}
         
-        {/* Right: Notifications, Chat, Profile */}
+        {/* Right: Notifications, Profile */}
         <div className="flex items-center space-x-2">
-          <Link to="/chat">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn(
-                "relative",
-                isActive("/chat") && "bg-accent"
-              )}
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-vibe-500"></span>
-            </Button>
-          </Link>
-          
           <Link to="/notifications">
             <Button 
               variant="ghost" 
