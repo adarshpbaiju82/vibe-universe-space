@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -73,11 +73,14 @@ const SAMPLE_REELS = [
 interface ReelsProps {
   orientation?: 'horizontal' | 'vertical';
   className?: string;
+  fullscreen?: boolean;
 }
 
-const Reels = ({ orientation = 'horizontal', className }: ReelsProps) => {
+const Reels = ({ orientation = 'horizontal', className, fullscreen = false }: ReelsProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentReelIndex, setCurrentReelIndex] = useState(0);
   
+  // Scroll control functions
   const scrollLeft = () => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
@@ -90,14 +93,43 @@ const Reels = ({ orientation = 'horizontal', className }: ReelsProps) => {
   
   const scrollUp = () => {
     if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ top: -300, behavior: 'smooth' });
+    if (currentReelIndex > 0) {
+      setCurrentReelIndex(currentReelIndex - 1);
+      scrollRef.current.scrollTo({ 
+        top: (currentReelIndex - 1) * scrollRef.current.clientHeight, 
+        behavior: 'smooth' 
+      });
+    }
   };
   
   const scrollDown = () => {
     if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ top: 300, behavior: 'smooth' });
+    if (currentReelIndex < SAMPLE_REELS.length - 1) {
+      setCurrentReelIndex(currentReelIndex + 1);
+      scrollRef.current.scrollTo({ 
+        top: (currentReelIndex + 1) * scrollRef.current.clientHeight, 
+        behavior: 'smooth' 
+      });
+    }
+  };
+
+  // Snap scroll effect for vertically scrolling reels
+  const handleScroll = () => {
+    if (!scrollRef.current || orientation !== 'vertical' || !fullscreen) return;
+    
+    const container = scrollRef.current;
+    const scrollTop = container.scrollTop;
+    const reelHeight = container.clientHeight;
+    
+    // Determine which reel is most visible
+    const reelIndex = Math.round(scrollTop / reelHeight);
+    
+    if (reelIndex !== currentReelIndex) {
+      setCurrentReelIndex(reelIndex);
+    }
   };
   
+  // Render horizontal reels
   if (orientation === 'horizontal') {
     return (
       <div className={cn("relative w-full", className)}>
@@ -136,38 +168,64 @@ const Reels = ({ orientation = 'horizontal', className }: ReelsProps) => {
     );
   }
   
+  // Render vertical reels (normal or fullscreen)
   return (
-    <div className={cn("relative h-[500px] w-full", className)}>
-      <h2 className="text-2xl font-bold mb-4">Reels</h2>
+    <div className={cn(
+      "relative w-full", 
+      fullscreen ? "h-[100vh] fixed inset-0 bg-black z-50" : "h-[500px]",
+      className
+    )}>
+      {!fullscreen && <h2 className="text-2xl font-bold mb-4">Reels</h2>}
       <div className="relative h-full">
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="absolute left-1/2 -top-4 z-10 transform -translate-x-1/2 rounded-full bg-background/80 backdrop-blur-sm rotate-90"
-          onClick={scrollUp}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
+        {!fullscreen && (
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="absolute left-1/2 -top-4 z-10 transform -translate-x-1/2 rounded-full bg-background/80 backdrop-blur-sm rotate-90"
+            onClick={scrollUp}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         
         <ScrollArea 
           ref={scrollRef}
-          className="h-full w-full overflow-y-auto"
+          className={cn(
+            "h-full w-full",
+            fullscreen ? "snap-y snap-mandatory" : "overflow-y-auto"
+          )}
+          onScroll={handleScroll}
         >
-          <div className="space-y-4 px-4">
-            {SAMPLE_REELS.map((reel) => (
-              <ReelCard key={reel.id} reel={reel} orientation="vertical" />
+          <div className={cn(
+            fullscreen ? "h-full" : "space-y-4 px-4"
+          )}>
+            {SAMPLE_REELS.map((reel, index) => (
+              <div 
+                key={reel.id} 
+                className={cn(
+                  fullscreen ? "h-screen snap-start snap-always" : ""
+                )}
+              >
+                <ReelCard 
+                  reel={reel} 
+                  orientation="vertical" 
+                  fullscreen={fullscreen}
+                />
+              </div>
             ))}
           </div>
         </ScrollArea>
         
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="absolute left-1/2 -bottom-4 z-10 transform -translate-x-1/2 rounded-full bg-background/80 backdrop-blur-sm rotate-90"
-          onClick={scrollDown}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+        {!fullscreen && (
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="absolute left-1/2 -bottom-4 z-10 transform -translate-x-1/2 rounded-full bg-background/80 backdrop-blur-sm rotate-90"
+            onClick={scrollDown}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        )}
       </div>
     </div>
   );

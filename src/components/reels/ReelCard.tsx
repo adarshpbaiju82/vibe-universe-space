@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { Play, Pause, Heart, MessageCircle, Share, MoreVertical } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, Heart, MessageCircle, Share, MoreVertical, Volume, VolumeX } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,12 +23,42 @@ interface ReelCardProps {
   reel: Reel;
   orientation?: 'horizontal' | 'vertical';
   className?: string;
+  fullscreen?: boolean;
 }
 
-const ReelCard = ({ reel, orientation = 'horizontal', className }: ReelCardProps) => {
+const ReelCard = ({ reel, orientation = 'horizontal', className, fullscreen = false }: ReelCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Play/pause video when in viewport (for fullscreen mode)
+  useEffect(() => {
+    if (!fullscreen || !videoRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play();
+            setIsPlaying(true);
+          } else {
+            videoRef.current?.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.6 } // Play when 60% or more is visible
+    );
+
+    observer.observe(videoRef.current);
+    
+    return () => {
+      if (videoRef.current) {
+        observer.unobserve(videoRef.current);
+      }
+    };
+  }, [fullscreen]);
   
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -46,6 +76,121 @@ const ReelCard = ({ reel, orientation = 'horizontal', className }: ReelCardProps
     setIsLiked(!isLiked);
   };
   
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(!isMuted);
+  };
+  
+  // If fullscreen, use a different UI layout
+  if (fullscreen) {
+    return (
+      <div className="relative h-full w-full overflow-hidden bg-black">
+        <video 
+          ref={videoRef}
+          src={reel.video}
+          className="h-full w-full object-contain"
+          loop
+          playsInline
+          muted={isMuted}
+          onClick={togglePlay}
+        />
+        
+        {/* Video Controls Overlay */}
+        <div className="absolute inset-0 flex flex-col justify-between p-4 text-white">
+          {/* Top bar with user info */}
+          <div className="flex items-center">
+            <Avatar className="h-10 w-10 mr-2 border-2 border-white">
+              <AvatarImage src={reel.user.avatar} />
+              <AvatarFallback>{reel.user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-white text-shadow-sm">@{reel.user.username}</span>
+          </div>
+          
+          {/* Center play button */}
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-20 w-20 rounded-full bg-black/30 text-white hover:bg-black/50"
+                onClick={togglePlay}
+              >
+                <Play className="h-12 w-12" />
+              </Button>
+            </div>
+          )}
+          
+          {/* Bottom area with description and actions */}
+          <div className="flex justify-between items-end">
+            {/* Description */}
+            <div className="max-w-[70%]">
+              <p className="text-white text-shadow-sm mb-2">{reel.description}</p>
+              <div className="flex space-x-4 text-sm">
+                <span>{reel.likes.toLocaleString()} likes</span>
+                <span>{reel.comments.toLocaleString()} comments</span>
+              </div>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="flex flex-col items-center space-y-6">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className={cn(
+                  "rounded-full bg-black/30 text-white hover:bg-black/50",
+                  isLiked && "text-red-500"
+                )}
+                onClick={toggleLike}
+              >
+                <Heart className="h-7 w-7" fill={isLiked ? "currentColor" : "none"} />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="rounded-full bg-black/30 text-white hover:bg-black/50"
+              >
+                <MessageCircle className="h-7 w-7" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="rounded-full bg-black/30 text-white hover:bg-black/50"
+              >
+                <Share className="h-7 w-7" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="rounded-full bg-black/30 text-white hover:bg-black/50"
+                onClick={toggleMute}
+              >
+                {isMuted ? (
+                  <VolumeX className="h-7 w-7" />
+                ) : (
+                  <Volume className="h-7 w-7" />
+                )}
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="rounded-full bg-black/30 text-white hover:bg-black/50"
+              >
+                <MoreVertical className="h-7 w-7" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Regular card view
   return (
     <Card className={cn(
       "overflow-hidden",
