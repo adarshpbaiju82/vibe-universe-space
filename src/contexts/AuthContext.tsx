@@ -21,9 +21,6 @@ interface AuthContextType {
   signup: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
   setIntendedPath: (path: string) => void;
-  forgotPassword: (email: string) => Promise<void>;
-  verifyResetCode: (email: string, code: string) => Promise<boolean>;
-  resetPassword: (email: string, code: string, newPassword: string) => Promise<boolean>;
 }
 
 // Mock user data
@@ -51,9 +48,6 @@ const MOCK_USERS = [
     followingCount: 283
   }
 ];
-
-// Mock reset codes storage
-const resetCodes: Record<string, { code: string, expiresAt: Date }> = {};
 
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -151,108 +145,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     navigate("/signin");
   };
 
-  // Password reset functionality
-  const forgotPassword = async (email: string) => {
-    try {
-      // Simulate API call with delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check if user exists
-      const user = MOCK_USERS.find(u => u.email === email);
-      if (!user) {
-        throw new Error("No account found with this email");
-      }
-      
-      // Generate a 6-digit code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Store the code with an expiration time (15 minutes)
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-      
-      resetCodes[email] = { code, expiresAt };
-      
-      // In a real app, send the code via email
-      console.log(`Password reset code for ${email}: ${code}`);
-      
-      toast.success("Reset code sent to your email");
-      return;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to request password reset");
-      throw error;
-    }
-  };
-
-  const verifyResetCode = async (email: string, code: string) => {
-    try {
-      // Check if the code exists and is valid
-      const resetData = resetCodes[email];
-      
-      if (!resetData) {
-        throw new Error("No reset code found for this email");
-      }
-      
-      if (new Date() > resetData.expiresAt) {
-        // Code has expired
-        delete resetCodes[email];
-        throw new Error("Reset code has expired. Please request a new one");
-      }
-      
-      if (resetData.code !== code) {
-        throw new Error("Invalid reset code");
-      }
-      
-      // Code is valid
-      return true;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to verify reset code");
-      return false;
-    }
-  };
-
-  const resetPassword = async (email: string, code: string, newPassword: string) => {
-    try {
-      // First verify the code
-      const isCodeValid = await verifyResetCode(email, code);
-      
-      if (!isCodeValid) {
-        throw new Error("Invalid or expired reset code");
-      }
-      
-      // In a real app, update the password in the database
-      // For mock data, find the user and update password
-      const userIndex = MOCK_USERS.findIndex(u => u.email === email);
-      
-      if (userIndex === -1) {
-        throw new Error("User not found");
-      }
-      
-      // Update password
-      MOCK_USERS[userIndex].password = newPassword;
-      
-      // Remove the reset code
-      delete resetCodes[email];
-      
-      toast.success("Password has been reset successfully");
-      return true;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to reset password");
-      return false;
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      login, 
-      signup, 
-      logout, 
-      setIntendedPath,
-      forgotPassword,
-      verifyResetCode,
-      resetPassword
-    }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, setIntendedPath }}>
       {children}
     </AuthContext.Provider>
   );
