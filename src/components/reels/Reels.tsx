@@ -63,7 +63,7 @@ const SAMPLE_REELS = [
       avatar: 'https://i.pravatar.cc/150?img=5',
     },
     video: 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4',
-    description: 'Nature's beauty is unmatched 🌿 #forest #naturelovers',
+    description: "Nature's beauty is unmatched 🌿 #forest #naturelovers",
     likes: 4321,
     comments: 112,
     shares: 56,
