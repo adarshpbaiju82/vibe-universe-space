@@ -1,12 +1,16 @@
-import { useState } from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageIcon, VideoIcon, X, Loader2 } from "lucide-react";
+import { ImageIcon, VideoIcon, X, Loader2, AtSign, Hash } from "lucide-react";
 import { createPost, Post } from "@/services/dataService";
 import { toast } from "sonner";
+import { MentionSuggestions } from "./MentionSuggestions";
+import { HashtagSuggestions } from "./HashtagSuggestions";
+import { Link } from "react-router-dom";
 
 interface CreatePostProps {
   onPostCreated?: (post: Post) => void;
@@ -19,6 +23,13 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaPreview, setMediaPreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // For mentions and hashtags
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [hashtagQuery, setHashtagQuery] = useState("");
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
+  const [hashtagPosition, setHashtagPosition] = useState<{ top: number; left: number } | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   if (!user) return null;
   
@@ -71,6 +82,172 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     }
   };
   
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setContent(value);
+    
+    // Check for mentions (@) and hashtags (#)
+    const selectionStart = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, selectionStart);
+    
+    // Close both suggestion menus first
+    setMentionPosition(null);
+    setHashtagPosition(null);
+    
+    // Check for mentions
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (mentionMatch && !textBeforeCursor.match(/\S@\w*$/)) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      
+      if (textareaRef.current) {
+        const cursorPosition = getCursorCoordinates(textareaRef.current, selectionStart);
+        setMentionPosition(cursorPosition);
+      }
+    } else {
+      setMentionQuery("");
+    }
+    
+    // Check for hashtags
+    const hashtagMatch = textBeforeCursor.match(/#(\w*)$/);
+    if (hashtagMatch && !textBeforeCursor.match(/\S#\w*$/)) {
+      const query = hashtagMatch[1];
+      setHashtagQuery(query);
+      
+      if (textareaRef.current) {
+        const cursorPosition = getCursorCoordinates(textareaRef.current, selectionStart);
+        setHashtagPosition(cursorPosition);
+      }
+    } else {
+      setHashtagQuery("");
+    }
+  };
+  
+  const getCursorCoordinates = (textarea: HTMLTextAreaElement, position: number) => {
+    // Create a mirror element
+    const mirror = document.createElement('div');
+    
+    // Copy the textarea's styling
+    const style = window.getComputedStyle(textarea);
+    Array.from(style).forEach(key => {
+      mirror.style.setProperty(key, style.getPropertyValue(key));
+    });
+    
+    // Set the mirror's fixed properties
+    mirror.style.position = 'absolute';
+    mirror.style.top = '0';
+    mirror.style.left = '0';
+    mirror.style.visibility = 'hidden';
+    mirror.style.overflow = 'hidden';
+    mirror.style.height = 'auto';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordBreak = 'break-word';
+    
+    document.body.appendChild(mirror);
+    
+    // Get the text up to the cursor
+    const textBeforeCursor = textarea.value.substring(0, position);
+    
+    // Add text to the mirror
+    mirror.textContent = textBeforeCursor;
+    
+    // Create and add a span to mark the cursor position
+    const span = document.createElement('span');
+    span.textContent = '|';
+    mirror.appendChild(span);
+    
+    // Get the cursor coordinates relative to the mirror
+    const spanRect = span.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    
+    // Clean up
+    document.body.removeChild(mirror);
+    
+    // Return the coordinates
+    return {
+      top: Math.min(spanRect.top - textareaRect.top + textarea.scrollTop + span.offsetHeight, textarea.offsetHeight),
+      left: spanRect.left - textareaRect.left + textarea.scrollLeft
+    };
+  };
+  
+  const handleMentionSelect = (username: string) => {
+    if (!textareaRef.current) return;
+    
+    const selectionStart = textareaRef.current.selectionStart;
+    const textBeforeCursor = content.substring(0, selectionStart);
+    const textAfterCursor = content.substring(selectionStart);
+    
+    // Replace the last @word with @username
+    const newTextBeforeCursor = textBeforeCursor.replace(/@\w*$/, `@${username} `);
+    
+    setContent(newTextBeforeCursor + textAfterCursor);
+    setMentionPosition(null);
+    
+    // Focus and place cursor after the inserted mention
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPosition = newTextBeforeCursor.length;
+        textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
+    }, 0);
+  };
+  
+  const handleHashtagSelect = (hashtag: string) => {
+    if (!textareaRef.current) return;
+    
+    const selectionStart = textareaRef.current.selectionStart;
+    const textBeforeCursor = content.substring(0, selectionStart);
+    const textAfterCursor = content.substring(selectionStart);
+    
+    // Replace the last #word with #hashtag
+    const newTextBeforeCursor = textBeforeCursor.replace(/#\w*$/, `#${hashtag} `);
+    
+    setContent(newTextBeforeCursor + textAfterCursor);
+    setHashtagPosition(null);
+    
+    // Focus and place cursor after the inserted hashtag
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPosition = newTextBeforeCursor.length;
+        textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
+    }, 0);
+  };
+  
+  // Format the content to highlight mentions and hashtags
+  const formatContent = () => {
+    const parts = content.split(/(@\w+|#\w+)/).map((part, index) => {
+      if (part.startsWith('@')) {
+        const username = part.substring(1);
+        return (
+          <Link 
+            key={index}
+            to={`/profile/${username}`}
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </Link>
+        );
+      } else if (part.startsWith('#')) {
+        const hashtag = part.substring(1);
+        return (
+          <Link
+            key={index}
+            to={`/explore?hashtag=${hashtag}`}
+            className="text-pink-500 hover:underline"
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+    
+    return parts;
+  };
+  
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -80,13 +257,26 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
             <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <Textarea
+              ref={textareaRef}
               placeholder="What's on your mind?"
               className="resize-none mb-3 focus-visible:ring-vibe-500"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
               rows={3}
+            />
+            
+            <MentionSuggestions
+              query={mentionQuery}
+              onSelect={handleMentionSelect}
+              position={mentionPosition}
+            />
+            
+            <HashtagSuggestions
+              query={hashtagQuery}
+              onSelect={handleHashtagSelect}
+              position={hashtagPosition}
             />
             
             {mediaPreview && (
@@ -160,7 +350,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
               
               <Button 
                 onClick={handleSubmit}
-                className="vibe-button"
+                className="vibe-button bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600"
                 disabled={isSubmitting || (!content.trim() && !mediaUrl)}
               >
                 {isSubmitting ? (

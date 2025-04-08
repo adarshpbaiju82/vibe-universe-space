@@ -75,6 +75,61 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     return format(new Date(date), "MMM d");
   };
   
+  // Format the post content to highlight mentions and hashtags
+  const formatContent = (content: string) => {
+    if (!content) return null;
+    
+    // Split by mentions and hashtags, preserving delimiters
+    const parts = content.split(/(\s@\w+\s|\s#\w+\s|@\w+\s|#\w+\s|\s@\w+|\s#\w+|^@\w+\s|^#\w+\s|^@\w+|^#\w+)/).filter(Boolean);
+    
+    return parts.map((part, index) => {
+      // Check for mentions
+      const mentionMatch = part.match(/^@(\w+)$|^@(\w+)\s|\s@(\w+)$|\s@(\w+)\s/);
+      if (mentionMatch) {
+        const username = mentionMatch[1] || mentionMatch[2] || mentionMatch[3] || mentionMatch[4];
+        const hasLeadingSpace = part.startsWith(' ');
+        const hasTrailingSpace = part.endsWith(' ');
+        
+        return (
+          <span key={index}>
+            {hasLeadingSpace ? ' ' : ''}
+            <Link 
+              to={`/profile/${username}`}
+              className="text-blue-500 hover:underline"
+            >
+              @{username}
+            </Link>
+            {hasTrailingSpace ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      // Check for hashtags
+      const hashtagMatch = part.match(/^#(\w+)$|^#(\w+)\s|\s#(\w+)$|\s#(\w+)\s/);
+      if (hashtagMatch) {
+        const hashtag = hashtagMatch[1] || hashtagMatch[2] || hashtagMatch[3] || hashtagMatch[4];
+        const hasLeadingSpace = part.startsWith(' ');
+        const hasTrailingSpace = part.endsWith(' ');
+        
+        return (
+          <span key={index}>
+            {hasLeadingSpace ? ' ' : ''}
+            <Link
+              to={`/explore?hashtag=${hashtag}`}
+              className="text-pink-500 hover:underline"
+            >
+              #{hashtag}
+            </Link>
+            {hasTrailingSpace ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      // Regular text
+      return part;
+    });
+  };
+  
   if (isHidden) {
     return (
       <Card className="mb-4 p-4 text-center">
@@ -129,7 +184,7 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         </div>
         
         <div className="mb-4">
-          <p className="mb-3">{post.content}</p>
+          <p className="mb-3">{formatContent(post.content)}</p>
           
           {post.mediaUrl && post.mediaType === 'image' && (
             <div className="relative rounded-lg overflow-hidden mb-2 aspect-video bg-muted/30">
