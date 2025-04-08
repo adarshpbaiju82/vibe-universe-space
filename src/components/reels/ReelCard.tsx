@@ -4,6 +4,7 @@ import { Play, Pause, Heart, MessageCircle, Share, MoreVertical, Volume, VolumeX
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { cn } from '@/lib/utils';
 
 interface Reel {
@@ -24,41 +25,38 @@ interface ReelCardProps {
   orientation?: 'horizontal' | 'vertical';
   className?: string;
   fullscreen?: boolean;
+  isActive?: boolean;
 }
 
-const ReelCard = ({ reel, orientation = 'horizontal', className, fullscreen = false }: ReelCardProps) => {
+const ReelCard = ({ 
+  reel, 
+  orientation = 'horizontal', 
+  className, 
+  fullscreen = false,
+  isActive = false 
+}: ReelCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Play/pause video when in viewport (for fullscreen mode)
+  // Play/pause video based on isActive prop
   useEffect(() => {
-    if (!fullscreen || !videoRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            videoRef.current?.play();
-            setIsPlaying(true);
-          } else {
-            videoRef.current?.pause();
-            setIsPlaying(false);
-          }
-        });
-      },
-      { threshold: 0.6 } // Play when 60% or more is visible
-    );
-
-    observer.observe(videoRef.current);
+    if (!videoRef.current) return;
     
-    return () => {
-      if (videoRef.current) {
-        observer.unobserve(videoRef.current);
-      }
-    };
-  }, [fullscreen]);
+    if (isActive) {
+      videoRef.current.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(error => {
+          console.error('Error playing video:', error);
+        });
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isActive]);
   
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -86,16 +84,18 @@ const ReelCard = ({ reel, orientation = 'horizontal', className, fullscreen = fa
   // If fullscreen, use a different UI layout
   if (fullscreen) {
     return (
-      <div className="relative h-full w-full overflow-hidden bg-black">
-        <video 
-          ref={videoRef}
-          src={reel.video}
-          className="h-full w-full object-contain"
-          loop
-          playsInline
-          muted={isMuted}
-          onClick={togglePlay}
-        />
+      <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-blue-600/30 via-purple-500/20 to-pink-500/30">
+        <AspectRatio ratio={9/16} className="h-full mx-auto">
+          <video 
+            ref={videoRef}
+            src={reel.video}
+            className="h-full w-full object-cover"
+            loop
+            playsInline
+            muted={isMuted}
+            onClick={togglePlay}
+          />
+        </AspectRatio>
         
         {/* Video Controls Overlay */}
         <div className="absolute inset-0 flex flex-col justify-between p-4 text-white">
@@ -198,28 +198,30 @@ const ReelCard = ({ reel, orientation = 'horizontal', className, fullscreen = fa
       className
     )}>
       <div className="relative">
-        <div className="relative aspect-[9/16] w-full overflow-hidden">
-          <video 
-            ref={videoRef}
-            src={reel.video}
-            className="h-full w-full object-cover"
-            loop
-            playsInline
-            muted
-            onClick={togglePlay}
-          />
-          
-          {!isPlaying && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="absolute inset-0 m-auto h-12 w-12 rounded-full bg-black/40 text-white hover:bg-black/60"
+        <AspectRatio ratio={9/16}>
+          <div className="relative aspect-[9/16] w-full overflow-hidden">
+            <video 
+              ref={videoRef}
+              src={reel.video}
+              className="h-full w-full object-cover"
+              loop
+              playsInline
+              muted
               onClick={togglePlay}
-            >
-              <Play className="h-6 w-6" />
-            </Button>
-          )}
-        </div>
+            />
+            
+            {!isPlaying && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="absolute inset-0 m-auto h-12 w-12 rounded-full bg-black/40 text-white hover:bg-black/60"
+                onClick={togglePlay}
+              >
+                <Play className="h-6 w-6" />
+              </Button>
+            )}
+          </div>
+        </AspectRatio>
         
         {/* User info overlay */}
         <div className="absolute bottom-4 left-4 flex items-center">

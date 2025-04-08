@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -133,7 +133,7 @@ const Reels = ({ orientation = 'horizontal', className, fullscreen = false }: Re
   if (orientation === 'horizontal') {
     return (
       <div className={cn("relative w-full", className)}>
-        <h2 className="text-2xl font-bold mb-4">Reels</h2>
+        <h2 className="text-2xl font-bold mb-4 text-white">Reels</h2>
         <div className="relative">
           <Button 
             variant="outline" 
@@ -172,10 +172,10 @@ const Reels = ({ orientation = 'horizontal', className, fullscreen = false }: Re
   return (
     <div className={cn(
       "relative w-full", 
-      fullscreen ? "h-[100vh] fixed inset-0 bg-black z-50" : "h-[500px]",
+      fullscreen ? "h-[100vh] fixed inset-0 z-50" : "h-[500px]",
       className
     )}>
-      {!fullscreen && <h2 className="text-2xl font-bold mb-4">Reels</h2>}
+      {!fullscreen && <h2 className="text-2xl font-bold mb-4 text-white">Reels</h2>}
       <div className="relative h-full">
         {!fullscreen && (
           <Button 
@@ -210,6 +210,7 @@ const Reels = ({ orientation = 'horizontal', className, fullscreen = false }: Re
                   reel={reel} 
                   orientation="vertical" 
                   fullscreen={fullscreen}
+                  isActive={index === currentReelIndex}
                 />
               </div>
             ))}
