@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Compass, Bell, User, PlusSquare, LogOut } from "lucide-react";
+import { Home, Compass, Bell, User, PlusSquare, LogOut, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -15,6 +15,7 @@ const BottomNav = () => {
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/explore", icon: Compass, label: "Explore" },
+    { path: "/reels", icon: Film, label: "Reels" },
     { path: "/create", icon: PlusSquare, label: "Create" },
     { path: "/notifications", icon: Bell, label: "Alerts" },
     { path: `/profile/${user?.username || ''}`, icon: User, label: "Profile" },

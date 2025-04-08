@@ -15,6 +15,11 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import CreatePost from "./pages/CreatePost";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyResetCode from "./pages/VerifyResetCode";
+import ResetPassword from "./pages/ResetPassword";
+import ResetSuccess from "./pages/ResetSuccess";
+import Reels from "./pages/Reels";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -32,10 +37,15 @@ const App = () => (
           <Routes>
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-reset-code" element={<VerifyResetCode />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-success" element={<ResetSuccess />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="/profile/:username" element={<Profile />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/reels" element={<Reels />} />
               <Route path="/create" element={<CreatePost />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
