@@ -21,6 +21,9 @@ interface AuthContextType {
   signup: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
   setIntendedPath: (path: string) => void;
+  requestPasswordReset: (email: string) => Promise<void>;
+  verifyOTP: (email: string, otp: string) => Promise<void>;
+  resetPassword: (email: string, password: string) => Promise<void>;
 }
 
 // Mock user data
@@ -145,8 +148,85 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     navigate("/signin");
   };
 
+  // New password reset functions
+  const requestPasswordReset = async (email: string) => {
+    try {
+      // Simulate API call with delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockUser = MOCK_USERS.find(u => u.email === email);
+      
+      if (!mockUser) {
+        throw new Error("Email not found");
+      }
+      
+      // In a real app, we would send an email with the OTP here
+      // For demo, we'll store the email in localStorage to use in the next steps
+      localStorage.setItem("resetEmail", email);
+      toast.success("OTP sent to your email!");
+      
+      // Navigate to OTP verification page
+      navigate("/verify-otp");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send OTP");
+      throw error;
+    }
+  };
+
+  const verifyOTP = async (email: string, otp: string) => {
+    try {
+      // Simulate API call with delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, we would verify the OTP here
+      // For demo, we'll just check if the OTP is "123456"
+      if (otp !== "123456") {
+        throw new Error("Invalid OTP");
+      }
+      
+      toast.success("OTP verified successfully!");
+      
+      // Navigate to reset password page
+      navigate("/reset-password");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to verify OTP");
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string, password: string) => {
+    try {
+      // Simulate API call with delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, we would update the password in the database here
+      // For demo, we'll just show a success message
+      
+      // Clear the reset email from localStorage
+      localStorage.removeItem("resetEmail");
+      
+      toast.success("Password reset successfully!");
+      
+      // Navigate to success page
+      navigate("/reset-success");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reset password");
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, setIntendedPath }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      login, 
+      signup, 
+      logout, 
+      setIntendedPath,
+      requestPasswordReset,
+      verifyOTP,
+      resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

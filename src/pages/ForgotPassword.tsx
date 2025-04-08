@@ -6,27 +6,49 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, ArrowLeft } from "lucide-react";
+import { z } from "zod";
 
-const SignIn = () => {
-  const { login } = useAuth();
+// Email validation schema
+const emailSchema = z.string().email("Please enter a valid email address");
+
+const ForgotPassword = () => {
+  const { requestPasswordReset } = useAuth();
   
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  
+  const validateEmail = () => {
+    try {
+      emailSchema.parse(email);
+      setEmailError("");
+      return true;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setEmailError(err.errors[0].message);
+      }
+      return false;
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    // Validate email
+    if (!validateEmail()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      await login(email, password);
-      // Redirect is handled in the login function
+      await requestPasswordReset(email);
+      // Navigation is handled in the requestPasswordReset function
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Login failed");
+      setError(error instanceof Error ? error.message : "Failed to send OTP");
     } finally {
       setIsSubmitting(false);
     }
@@ -37,14 +59,14 @@ const SignIn = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold gradient-text mb-2">VibeUniverse</h1>
-          <p className="text-lg text-muted-foreground">Connect with the cosmic community</p>
+          <p className="text-lg text-muted-foreground">Recover your account</p>
         </div>
         
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Forgot Password</CardTitle>
             <CardDescription>
-              Enter your credentials to access your account
+              Enter your email to receive a one-time password
             </CardDescription>
           </CardHeader>
           
@@ -64,51 +86,23 @@ const SignIn = () => {
                     id="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-10"
+                    className={`pl-10 ${emailError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) validateEmail();
+                    }}
+                    onBlur={validateEmail}
                     required
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                {emailError && (
+                  <p className="text-xs text-red-500">{emailError}</p>
+                )}
               </div>
               
               <div className="text-xs text-muted-foreground">
-                Demo credentials: user@example.com / password
+                We'll send a verification code to this email address
               </div>
             </CardContent>
             
@@ -121,15 +115,18 @@ const SignIn = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Please wait
+                    Sending...
                   </>
-                ) : "Sign In"}
+                ) : "Send OTP"}
               </Button>
               
-              <div className="text-center text-sm">
-                Don't have an account?{" "}
-                <Link to="/signup" className="text-primary hover:underline">
-                  Sign up
+              <div className="flex justify-center w-full">
+                <Link 
+                  to="/signin" 
+                  className="flex items-center text-sm text-primary hover:underline"
+                >
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  Back to Sign In
                 </Link>
               </div>
             </CardFooter>
@@ -140,4 +137,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default ForgotPassword;
