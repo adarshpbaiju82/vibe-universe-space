@@ -54,9 +54,10 @@ export const MediaCarousel = ({ mediaItems }: MediaCarouselProps) => {
     <Carousel 
       className="w-full" 
       opts={{ loop: true }}
-      onSelect={(api: EmblaCarouselType) => {
+      onSelect={(api) => {
         if (api) {
-          setCurrentIndex(api.selectedScrollSnap());
+          const emblaApi = api as unknown as EmblaCarouselType;
+          setCurrentIndex(emblaApi.selectedScrollSnap());
         }
       }}
     >
