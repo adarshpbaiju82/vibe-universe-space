@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,10 @@ const CreatePost = () => {
       
       // For this demo, we'll just use the first media item for compatibility with existing API
       const firstMedia = mediaItems.length > 0 ? mediaItems[0] : null;
+      const additionalMedia = mediaItems.slice(1).map(item => ({
+        type: item.type,
+        url: item.url
+      }));
       
       // Create a newPost object with the appropriate media type
       const newPost = await createPost(
@@ -74,6 +79,12 @@ const CreatePost = () => {
         firstMedia?.url || "",
         firstMedia?.type || undefined
       );
+      
+      // Simulate adding additional media to the post (in a real app, this would be handled differently)
+      if (additionalMedia.length > 0) {
+        // @ts-ignore - We're extending the Post type temporarily
+        newPost.additionalMedia = additionalMedia;
+      }
       
       toast.success("Post created successfully!");
       navigate("/");

@@ -5,12 +5,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ImageIcon, VideoIcon, X, Loader2, AtSign, Hash } from "lucide-react";
 import { createPost, Post } from "@/services/dataService";
 import { toast } from "sonner";
 import { MentionSuggestions } from "./MentionSuggestions";
 import { HashtagSuggestions } from "./HashtagSuggestions";
 import { Link } from "react-router-dom";
+import { MediaItem } from "./MediaCarousel";
+
+interface MediaInput extends MediaItem {
+  file: File;
+}
 
 interface CreatePostProps {
   onPostCreated?: (post: Post) => void;
@@ -19,9 +26,7 @@ interface CreatePostProps {
 const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { user } = useAuth();
   const [content, setContent] = useState("");
-  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [mediaPreview, setMediaPreview] = useState("");
+  const [mediaItems, setMediaItems] = useState<MediaInput[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // For mentions and hashtags
@@ -34,33 +39,52 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   if (!user) return null;
   
   const handleMediaInput = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, we'd upload the file to a storage service
-      const objectUrl = URL.createObjectURL(file);
-      setMediaPreview(objectUrl);
-      setMediaUrl(objectUrl);
-      setMediaType(type);
-    }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    // Create new media items for each selected file
+    const newItems: MediaInput[] = Array.from(files).map(file => ({
+      type,
+      url: URL.createObjectURL(file),
+      file
+    }));
+    
+    // Add new items to existing media
+    setMediaItems([...mediaItems, ...newItems]);
+    
+    // Reset the input
+    e.target.value = '';
   };
   
-  const removeMedia = () => {
-    setMediaPreview("");
-    setMediaUrl("");
-    setMediaType(null);
+  const removeMediaItem = (index: number) => {
+    setMediaItems(prev => prev.filter((_, i) => i !== index));
   };
   
   const handleSubmit = async () => {
-    if (!content.trim() && !mediaUrl) return;
+    if (!content.trim() && mediaItems.length === 0) return;
     
     setIsSubmitting(true);
     try {
-      // Create a newPost object with the appropriate media type
+      // In a real app with backend, we'd upload all media files to storage
+      // For now, we'll just simulate it by using the first media as the main one
+      const mainMedia = mediaItems.length > 0 ? mediaItems[0] : null;
+      const additionalMedia = mediaItems.slice(1).map(item => ({
+        type: item.type,
+        url: item.url
+      }));
+      
+      // Create a new post object with the appropriate media type
       const newPost = await createPost(
         content,
-        mediaUrl,
-        mediaType || undefined
+        mainMedia?.url || "",
+        mainMedia?.type || undefined
       );
+      
+      // Simulate adding additional media to the post (in a real app, this would be handled by the backend)
+      if (additionalMedia.length > 0) {
+        // @ts-ignore - We're extending the Post type temporarily
+        newPost.additionalMedia = additionalMedia;
+      }
       
       if (onPostCreated) {
         onPostCreated(newPost);
@@ -70,9 +94,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       
       // Reset form
       setContent("");
-      setMediaUrl("");
-      setMediaPreview("");
-      setMediaType(null);
+      setMediaItems([]);
       
     } catch (error) {
       toast.error("Failed to create post. Please try again.");
@@ -279,29 +301,38 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
               position={hashtagPosition}
             />
             
-            {mediaPreview && (
-              <div className="relative mb-3 rounded-md overflow-hidden">
-                {mediaType === "image" ? (
-                  <img 
-                    src={mediaPreview} 
-                    alt="Upload preview" 
-                    className="max-h-60 rounded-md object-contain bg-secondary w-full"
-                  />
-                ) : (
-                  <video 
-                    src={mediaPreview} 
-                    className="max-h-60 rounded-md object-contain bg-secondary w-full"
-                    controls
-                  />
-                )}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute top-2 right-2 rounded-full opacity-80 hover:opacity-100"
-                  onClick={removeMedia}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            {mediaItems.length > 0 && (
+              <div className="mb-3">
+                <ScrollArea className="w-full pb-2">
+                  <div className="flex gap-2 pb-2">
+                    {mediaItems.map((item, index) => (
+                      <div key={index} className="relative h-24 w-24 flex-shrink-0">
+                        <AspectRatio ratio={1/1} className="rounded-md overflow-hidden bg-muted">
+                          {item.type === "image" ? (
+                            <img 
+                              src={item.url} 
+                              alt={`Media preview ${index}`} 
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <video 
+                              src={item.url} 
+                              className="object-cover w-full h-full"
+                            />
+                          )}
+                        </AspectRatio>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-1 right-1 h-5 w-5 rounded-full opacity-80 hover:opacity-100"
+                          onClick={() => removeMediaItem(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             )}
             
@@ -312,7 +343,6 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   size="sm" 
                   className="text-muted-foreground" 
                   asChild
-                  disabled={!!mediaUrl}
                 >
                   <label>
                     <ImageIcon className="h-4 w-4 mr-1" />
@@ -322,7 +352,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                       accept="image/*" 
                       className="hidden" 
                       onChange={(e) => handleMediaInput(e, "image")}
-                      disabled={!!mediaUrl}
+                      multiple
                     />
                   </label>
                 </Button>
@@ -332,7 +362,6 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   size="sm" 
                   className="text-muted-foreground" 
                   asChild
-                  disabled={!!mediaUrl}
                 >
                   <label>
                     <VideoIcon className="h-4 w-4 mr-1" />
@@ -342,16 +371,70 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                       accept="video/*" 
                       className="hidden" 
                       onChange={(e) => handleMediaInput(e, "video")}
-                      disabled={!!mediaUrl}
+                      multiple
                     />
                   </label>
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1 text-blue-500"
+                  onClick={() => {
+                    if (textareaRef.current) {
+                      const start = textareaRef.current.selectionStart;
+                      const end = textareaRef.current.selectionEnd;
+                      const newContent = content.substring(0, start) + '@' + content.substring(end);
+                      setContent(newContent);
+                      
+                      // Set focus and cursor position right after the @ symbol
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.focus();
+                          const newPosition = start + 1;
+                          textareaRef.current.setSelectionRange(newPosition, newPosition);
+                        }
+                      }, 0);
+                    }
+                  }}
+                >
+                  <AtSign className="h-4 w-4" />
+                  <span>Mention</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1 text-pink-500"
+                  onClick={() => {
+                    if (textareaRef.current) {
+                      const start = textareaRef.current.selectionStart;
+                      const end = textareaRef.current.selectionEnd;
+                      const newContent = content.substring(0, start) + '#' + content.substring(end);
+                      setContent(newContent);
+                      
+                      // Set focus and cursor position right after the # symbol
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.focus();
+                          const newPosition = start + 1;
+                          textareaRef.current.setSelectionRange(newPosition, newPosition);
+                        }
+                      }, 0);
+                    }
+                  }}
+                >
+                  <Hash className="h-4 w-4" />
+                  <span>Hashtag</span>
                 </Button>
               </div>
               
               <Button 
                 onClick={handleSubmit}
                 className="vibe-button bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600"
-                disabled={isSubmitting || (!content.trim() && !mediaUrl)}
+                disabled={isSubmitting || (!content.trim() && mediaItems.length === 0)}
               >
                 {isSubmitting ? (
                   <>

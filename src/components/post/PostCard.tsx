@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -26,11 +27,15 @@ import { toast } from "sonner";
 import Comments from "./Comments";
 import { MediaCarousel, MediaItem } from "./MediaCarousel";
 
-interface ExtendedPost extends Post {
-  additionalMedia?: {
-    type: 'image' | 'video';
-    url: string;
-  }[];
+// Add this interface for type safety
+export interface AdditionalMedia {
+  type: 'image' | 'video';
+  url: string;
+}
+
+// Extend the Post type
+export interface ExtendedPost extends Post {
+  additionalMedia?: AdditionalMedia[];
 }
 
 interface PostCardProps {
