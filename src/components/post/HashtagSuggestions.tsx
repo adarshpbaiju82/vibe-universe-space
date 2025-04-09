@@ -64,7 +64,7 @@ export const HashtagSuggestions = ({ query, onSelect, position }: HashtagSuggest
     <div 
       className="absolute z-50 w-64 rounded-md border border-input bg-popover shadow-md"
       style={{ 
-        top: `${position.top + 24}px`, // Position below the cursor
+        top: `${position.top}px`, // Position exactly at cursor
         left: `${position.left}px` 
       }}
     >
