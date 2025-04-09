@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Hashtag {
   id: string;
@@ -24,6 +25,9 @@ const fetchHashtags = async (query: string): Promise<Hashtag[]> => {
     { id: "5", name: "food", postCount: 432 },
     { id: "6", name: "fashion", postCount: 276 },
     { id: "7", name: "photography", postCount: 198 },
+    { id: "8", name: "art", postCount: 145 },
+    { id: "9", name: "nature", postCount: 289 },
+    { id: "10", name: "fitness", postCount: 312 },
   ].filter(tag => tag.name.toLowerCase().includes(query.toLowerCase()));
 };
 
@@ -58,41 +62,43 @@ export const HashtagSuggestions = ({ query, onSelect, position }: HashtagSuggest
 
   return (
     <div 
-      className="absolute z-50 max-h-60 w-64 overflow-y-auto rounded-md border border-input bg-popover shadow-md"
+      className="absolute z-50 w-64 rounded-md border border-input bg-popover shadow-md"
       style={{ 
         top: `${position.top}px`, 
         left: `${position.left}px` 
       }}
     >
-      <div className="p-1">
-        {loading ? (
-          <div className="flex items-center justify-center p-2">
-            <span className="text-sm text-muted-foreground">Loading...</span>
-          </div>
-        ) : (
-          hashtags.map((hashtag, index) => (
+      <ScrollArea className="max-h-60">
+        <div className="p-1">
+          {loading ? (
+            <div className="flex items-center justify-center p-2">
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : (
+            hashtags.map((hashtag, index) => (
+              <button
+                key={hashtag.id}
+                className={`flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm ${
+                  index === selectedIndex ? "bg-accent text-accent-foreground" : ""
+                }`}
+                onClick={() => onSelect(hashtag.name)}
+                onMouseEnter={() => setSelectedIndex(index)}
+              >
+                <span className="font-medium">#{hashtag.name}</span>
+                <span className="text-xs text-muted-foreground">{hashtag.postCount} posts</span>
+              </button>
+            ))
+          )}
+          {query.length > 0 && hashtags.length === 0 && (
             <button
-              key={hashtag.id}
-              className={`flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm ${
-                index === selectedIndex ? "bg-accent text-accent-foreground" : ""
-              }`}
-              onClick={() => onSelect(hashtag.name)}
-              onMouseEnter={() => setSelectedIndex(index)}
+              className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm"
+              onClick={() => onSelect(query)}
             >
-              <span className="font-medium">#{hashtag.name}</span>
-              <span className="text-xs text-muted-foreground">{hashtag.postCount} posts</span>
+              <span className="font-medium">Create #{query}</span>
             </button>
-          ))
-        )}
-        {query.length > 0 && hashtags.length === 0 && (
-          <button
-            className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm"
-            onClick={() => onSelect(query)}
-          >
-            <span className="font-medium">Create #{query}</span>
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

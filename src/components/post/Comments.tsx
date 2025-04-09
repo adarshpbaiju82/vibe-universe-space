@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { getComments, addComment, Comment } from "@/services/dataService";
+import { Link } from "react-router-dom";
+import { MentionSuggestions } from "./MentionSuggestions";
+import { HashtagSuggestions } from "./HashtagSuggestions";
 
 interface CommentsProps {
   postId: string;
@@ -32,6 +35,15 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
   const [editContent, setEditContent] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  
+  // For mentions and hashtags
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [hashtagQuery, setHashtagQuery] = useState("");
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
+  const [hashtagPosition, setHashtagPosition] = useState<{ top: number; left: number } | null>(null);
+  const newCommentRef = useRef<HTMLTextAreaElement>(null);
+  const editCommentRef = useRef<HTMLTextAreaElement>(null);
+  const replyCommentRef = useRef<HTMLTextAreaElement>(null);
   
   useEffect(() => {
     if (showComments) {
@@ -160,6 +172,192 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     return acc;
   }, {} as Record<string, { comment: Comment, replies: Comment[] }>);
   
+  // Handle text changes for mentions and hashtags
+  const handleTextChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    textareaRef: React.RefObject<HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value;
+    setter(value);
+    
+    // Check for mentions (@) and hashtags (#)
+    const selectionStart = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, selectionStart);
+    
+    // Reset positions
+    setMentionPosition(null);
+    setHashtagPosition(null);
+    
+    // Check for mentions
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (mentionMatch && !textBeforeCursor.match(/\S@\w*$/)) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      
+      if (textareaRef.current) {
+        const cursorPosition = getCursorCoordinates(textareaRef.current, selectionStart);
+        setMentionPosition(cursorPosition);
+      }
+    } else {
+      setMentionQuery("");
+    }
+    
+    // Check for hashtags
+    const hashtagMatch = textBeforeCursor.match(/#(\w*)$/);
+    if (hashtagMatch && !textBeforeCursor.match(/\S#\w*$/)) {
+      const query = hashtagMatch[1];
+      setHashtagQuery(query);
+      
+      if (textareaRef.current) {
+        const cursorPosition = getCursorCoordinates(textareaRef.current, selectionStart);
+        setHashtagPosition(cursorPosition);
+      }
+    } else {
+      setHashtagQuery("");
+    }
+  };
+  
+  // Gets cursor coordinates for suggestion positioning
+  const getCursorCoordinates = (textarea: HTMLTextAreaElement, position: number) => {
+    // Create a mirror element
+    const mirror = document.createElement('div');
+    
+    // Copy the textarea's styling
+    const style = window.getComputedStyle(textarea);
+    Array.from(style).forEach(key => {
+      mirror.style.setProperty(key, style.getPropertyValue(key));
+    });
+    
+    // Set the mirror's fixed properties
+    mirror.style.position = 'absolute';
+    mirror.style.top = '0';
+    mirror.style.left = '0';
+    mirror.style.visibility = 'hidden';
+    mirror.style.overflow = 'hidden';
+    mirror.style.height = 'auto';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordBreak = 'break-word';
+    
+    document.body.appendChild(mirror);
+    
+    // Get the text up to the cursor
+    const textBeforeCursor = textarea.value.substring(0, position);
+    
+    // Add text to the mirror
+    mirror.textContent = textBeforeCursor;
+    
+    // Create and add a span to mark the cursor position
+    const span = document.createElement('span');
+    span.textContent = '|';
+    mirror.appendChild(span);
+    
+    // Get the cursor coordinates relative to the mirror
+    const spanRect = span.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    
+    // Clean up
+    document.body.removeChild(mirror);
+    
+    // Return the coordinates
+    return {
+      top: Math.min(spanRect.top - textareaRect.top + textarea.scrollTop + span.offsetHeight, textarea.offsetHeight),
+      left: spanRect.left - textareaRect.left + textarea.scrollLeft
+    };
+  };
+  
+  // Handle mention/hashtag selection
+  const handleSuggestionSelect = (
+    text: string, 
+    isHashtag: boolean,
+    textareaRef: React.RefObject<HTMLTextAreaElement>,
+    contentState: string,
+    contentSetter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    if (!textareaRef.current) return;
+    
+    const selectionStart = textareaRef.current.selectionStart;
+    const textBeforeCursor = contentState.substring(0, selectionStart);
+    const textAfterCursor = contentState.substring(selectionStart);
+    
+    // Replace the last @word or #word with the selection
+    const prefix = isHashtag ? '#' : '@';
+    const newTextBeforeCursor = textBeforeCursor.replace(
+      isHashtag ? /#\w*$/ : /@\w*$/,
+      `${prefix}${text} `
+    );
+    
+    contentSetter(newTextBeforeCursor + textAfterCursor);
+    
+    // Reset positions
+    setMentionPosition(null);
+    setHashtagPosition(null);
+    
+    // Focus and place cursor after the inserted mention/hashtag
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPosition = newTextBeforeCursor.length;
+        textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
+    }, 0);
+  };
+  
+  // Format content to highlight mentions and hashtags
+  const formatContent = (content: string) => {
+    if (!content) return null;
+    
+    // Split by mentions and hashtags, preserving delimiters
+    const parts = content.split(/(\s@\w+\s|\s#\w+\s|@\w+\s|#\w+\s|\s@\w+|\s#\w+|^@\w+\s|^#\w+\s|^@\w+|^#\w+)/).filter(Boolean);
+    
+    return parts.map((part, index) => {
+      // Check for mentions
+      const mentionMatch = part.match(/^@(\w+)$|^@(\w+)\s|\s@(\w+)$|\s@(\w+)\s/);
+      if (mentionMatch) {
+        const username = mentionMatch[1] || mentionMatch[2] || mentionMatch[3] || mentionMatch[4];
+        const hasLeadingSpace = part.startsWith(' ');
+        const hasTrailingSpace = part.endsWith(' ');
+        
+        return (
+          <span key={index}>
+            {hasLeadingSpace ? ' ' : ''}
+            <Link 
+              to={`/profile/${username}`}
+              className="text-blue-500 hover:underline"
+            >
+              @{username}
+            </Link>
+            {hasTrailingSpace ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      // Check for hashtags
+      const hashtagMatch = part.match(/^#(\w+)$|^#(\w+)\s|\s#(\w+)$|\s#(\w+)\s/);
+      if (hashtagMatch) {
+        const hashtag = hashtagMatch[1] || hashtagMatch[2] || hashtagMatch[3] || hashtagMatch[4];
+        const hasLeadingSpace = part.startsWith(' ');
+        const hasTrailingSpace = part.endsWith(' ');
+        
+        return (
+          <span key={index}>
+            {hasLeadingSpace ? ' ' : ''}
+            <Link
+              to={`/explore?hashtag=${hashtag}`}
+              className="text-pink-500 hover:underline"
+            >
+              #{hashtag}
+            </Link>
+            {hasTrailingSpace ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      // Regular text
+      return part;
+    });
+  };
+  
   return (
     <div className="mt-2">
       <Button
@@ -180,13 +378,27 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                 <AvatarImage src={user.avatar} alt={user.username} />
                 <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <Textarea
+                  ref={newCommentRef}
                   placeholder="Add a comment..."
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => handleTextChange(e, setNewComment, newCommentRef)}
                   className="min-h-[60px] text-sm mb-2 resize-none"
                 />
+                
+                <MentionSuggestions
+                  query={mentionQuery}
+                  onSelect={(username) => handleSuggestionSelect(username, false, newCommentRef, newComment, setNewComment)}
+                  position={mentionPosition}
+                />
+                
+                <HashtagSuggestions
+                  query={hashtagQuery}
+                  onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, newCommentRef, newComment, setNewComment)}
+                  position={hashtagPosition}
+                />
+                
                 <div className="flex justify-end">
                   <Button
                     size="sm"
@@ -264,12 +476,26 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                         </div>
                         
                         {editingCommentId === comment.id ? (
-                          <div>
+                          <div className="relative">
                             <Textarea
+                              ref={editCommentRef}
                               value={editContent}
-                              onChange={(e) => setEditContent(e.target.value)}
+                              onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
                               className="min-h-[60px] text-sm my-2 resize-none"
                             />
+                            
+                            <MentionSuggestions
+                              query={mentionQuery}
+                              onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
+                              position={mentionPosition}
+                            />
+                            
+                            <HashtagSuggestions
+                              query={hashtagQuery}
+                              onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
+                              position={hashtagPosition}
+                            />
+                            
                             <div className="flex justify-end space-x-2">
                               <Button
                                 size="sm"
@@ -288,18 +514,32 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm">{comment.content}</p>
+                          <p className="text-sm">{formatContent(comment.content)}</p>
                         )}
                       </div>
                       
                       {replyToId === comment.id && (
-                        <div className="mt-2 ml-6">
+                        <div className="mt-2 ml-6 relative">
                           <Textarea
+                            ref={replyCommentRef}
                             placeholder="Write a reply..."
                             value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
+                            onChange={(e) => handleTextChange(e, setReplyContent, replyCommentRef)}
                             className="min-h-[60px] text-sm mb-2 resize-none"
                           />
+                          
+                          <MentionSuggestions
+                            query={mentionQuery}
+                            onSelect={(username) => handleSuggestionSelect(username, false, replyCommentRef, replyContent, setReplyContent)}
+                            position={mentionPosition}
+                          />
+                          
+                          <HashtagSuggestions
+                            query={hashtagQuery}
+                            onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, replyCommentRef, replyContent, setReplyContent)}
+                            position={hashtagPosition}
+                          />
+                          
                           <div className="flex justify-end space-x-2">
                             <Button
                               size="sm"
@@ -361,12 +601,26 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                                   </div>
                                   
                                   {editingCommentId === reply.id ? (
-                                    <div>
+                                    <div className="relative">
                                       <Textarea
+                                        ref={editCommentRef}
                                         value={editContent}
-                                        onChange={(e) => setEditContent(e.target.value)}
+                                        onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
                                         className="min-h-[60px] text-sm my-2 resize-none"
                                       />
+                                      
+                                      <MentionSuggestions
+                                        query={mentionQuery}
+                                        onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
+                                        position={mentionPosition}
+                                      />
+                                      
+                                      <HashtagSuggestions
+                                        query={hashtagQuery}
+                                        onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
+                                        position={hashtagPosition}
+                                      />
+                                      
                                       <div className="flex justify-end space-x-2">
                                         <Button
                                           size="sm"
@@ -385,7 +639,7 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                                       </div>
                                     </div>
                                   ) : (
-                                    <p className="text-sm">{reply.content}</p>
+                                    <p className="text-sm">{formatContent(reply.content)}</p>
                                   )}
                                 </div>
                               </div>

@@ -4,20 +4,26 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageIcon, VideoIcon, X, Loader2, ArrowLeft } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageIcon, VideoIcon, X, Loader2, ArrowLeft, AtSign, Hash } from "lucide-react";
 import { createPost } from "@/services/dataService";
 import { toast } from "sonner";
 import { MentionSuggestions } from "@/components/post/MentionSuggestions";
 import { HashtagSuggestions } from "@/components/post/HashtagSuggestions";
 import { Link } from "react-router-dom";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+
+interface MediaItem {
+  type: "image" | "video";
+  url: string;
+  file: File;
+}
 
 const CreatePost = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [content, setContent] = useState("");
-  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [mediaPreview, setMediaPreview] = useState("");
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // For mentions and hashtags
@@ -27,34 +33,47 @@ const CreatePost = () => {
   const [hashtagPosition, setHashtagPosition] = useState<{ top: number; left: number } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  if (!user) return null;
-  
+  // Handle file selection for media items
   const handleMediaInput = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, we'd upload the file to a storage service
-      const objectUrl = URL.createObjectURL(file);
-      setMediaPreview(objectUrl);
-      setMediaUrl(objectUrl);
-      setMediaType(type);
-    }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    // Create new media items for each selected file
+    const newItems: MediaItem[] = Array.from(files).map(file => ({
+      type,
+      url: URL.createObjectURL(file),
+      file
+    }));
+    
+    // Add new items to existing media
+    setMediaItems([...mediaItems, ...newItems]);
+    
+    // Reset the input to allow selecting the same file again
+    e.target.value = '';
   };
   
-  const removeMedia = () => {
-    setMediaPreview("");
-    setMediaUrl("");
-    setMediaType(null);
+  // Remove a specific media item
+  const removeMediaItem = (index: number) => {
+    setMediaItems(prev => prev.filter((_, i) => i !== index));
   };
   
+  // Handle post submission
   const handleSubmit = async () => {
-    if (!content.trim() && !mediaUrl) return;
+    if (!content.trim() && mediaItems.length === 0) return;
     
     setIsSubmitting(true);
     try {
+      // In a real application, you would upload all media files to a storage service
+      // and store the references in your database
+      
+      // For this demo, we'll just use the first media item for compatibility with existing API
+      const firstMedia = mediaItems.length > 0 ? mediaItems[0] : null;
+      
+      // Create a newPost object with the appropriate media type
       const newPost = await createPost(
         content,
-        mediaUrl,
-        mediaType || undefined
+        firstMedia?.url || "",
+        firstMedia?.type || undefined
       );
       
       toast.success("Post created successfully!");
@@ -233,6 +252,8 @@ const CreatePost = () => {
     return parts;
   };
   
+  if (!user) return null;
+  
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center mb-6">
@@ -243,6 +264,60 @@ const CreatePost = () => {
       </div>
       
       <div className="bg-card border border-border rounded-lg p-4">
+        <div className="flex justify-end gap-2 mb-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1 text-blue-500"
+            onClick={() => {
+              if (textareaRef.current) {
+                const start = textareaRef.current.selectionStart;
+                const end = textareaRef.current.selectionEnd;
+                const newContent = content.substring(0, start) + '@' + content.substring(end);
+                setContent(newContent);
+                
+                // Set focus and cursor position right after the @ symbol
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                    const newPosition = start + 1;
+                    textareaRef.current.setSelectionRange(newPosition, newPosition);
+                  }
+                }, 0);
+              }
+            }}
+          >
+            <AtSign className="h-4 w-4" />
+            <span>Mention</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1 text-pink-500"
+            onClick={() => {
+              if (textareaRef.current) {
+                const start = textareaRef.current.selectionStart;
+                const end = textareaRef.current.selectionEnd;
+                const newContent = content.substring(0, start) + '#' + content.substring(end);
+                setContent(newContent);
+                
+                // Set focus and cursor position right after the # symbol
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                    const newPosition = start + 1;
+                    textareaRef.current.setSelectionRange(newPosition, newPosition);
+                  }
+                }, 0);
+              }
+            }}
+          >
+            <Hash className="h-4 w-4" />
+            <span>Hashtag</span>
+          </Button>
+        </div>
+        
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -266,29 +341,38 @@ const CreatePost = () => {
           />
         </div>
         
-        {mediaPreview && (
-          <div className="relative mb-3 rounded-md overflow-hidden">
-            {mediaType === "image" ? (
-              <img 
-                src={mediaPreview} 
-                alt="Upload preview" 
-                className="max-h-80 rounded-md object-contain bg-secondary w-full"
-              />
-            ) : (
-              <video 
-                src={mediaPreview} 
-                className="max-h-80 rounded-md object-contain bg-secondary w-full"
-                controls
-              />
-            )}
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute top-2 right-2 rounded-full opacity-80 hover:opacity-100"
-              onClick={removeMedia}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        {mediaItems.length > 0 && (
+          <div className="mb-4">
+            <ScrollArea className="w-full" orientation="horizontal">
+              <div className="flex gap-2 pb-2">
+                {mediaItems.map((item, index) => (
+                  <div key={index} className="relative h-24 w-24 flex-shrink-0">
+                    <AspectRatio ratio={1/1} className="rounded-md overflow-hidden bg-muted">
+                      {item.type === "image" ? (
+                        <img 
+                          src={item.url} 
+                          alt={`Media preview ${index}`} 
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <video 
+                          src={item.url} 
+                          className="object-cover w-full h-full"
+                        />
+                      )}
+                    </AspectRatio>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute top-1 right-1 h-5 w-5 rounded-full opacity-80 hover:opacity-100"
+                      onClick={() => removeMediaItem(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
         
@@ -299,7 +383,6 @@ const CreatePost = () => {
               size="sm" 
               className="text-muted-foreground" 
               asChild
-              disabled={!!mediaUrl}
             >
               <label>
                 <ImageIcon className="h-4 w-4 mr-1" />
@@ -308,8 +391,8 @@ const CreatePost = () => {
                   type="file" 
                   accept="image/*" 
                   className="hidden" 
+                  multiple
                   onChange={(e) => handleMediaInput(e, "image")}
-                  disabled={!!mediaUrl}
                 />
               </label>
             </Button>
@@ -319,7 +402,6 @@ const CreatePost = () => {
               size="sm" 
               className="text-muted-foreground" 
               asChild
-              disabled={!!mediaUrl}
             >
               <label>
                 <VideoIcon className="h-4 w-4 mr-1" />
@@ -328,8 +410,8 @@ const CreatePost = () => {
                   type="file" 
                   accept="video/*" 
                   className="hidden" 
+                  multiple
                   onChange={(e) => handleMediaInput(e, "video")}
-                  disabled={!!mediaUrl}
                 />
               </label>
             </Button>
@@ -338,7 +420,7 @@ const CreatePost = () => {
           <Button 
             onClick={handleSubmit}
             className="bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600 text-white"
-            disabled={isSubmitting || (!content.trim() && !mediaUrl)}
+            disabled={isSubmitting || (!content.trim() && mediaItems.length === 0)}
           >
             {isSubmitting ? (
               <>

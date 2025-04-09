@@ -25,7 +25,7 @@ import {
 import { toggleLike, Post } from "@/services/dataService";
 import { toast } from "sonner";
 import Comments from "./Comments";
-import { VideoPlayer } from "@/components/ui/video-player";
+import { MediaCarousel, MediaItem } from "./MediaCarousel";
 
 interface PostCardProps {
   post: Post;
@@ -36,6 +36,27 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   const [isLiking, setIsLiking] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  
+  // Convert post media to MediaItem array for carousel
+  const mediaItems: MediaItem[] = [];
+  if (post.mediaUrl && post.mediaType) {
+    mediaItems.push({
+      type: post.mediaType as 'image' | 'video',
+      url: post.mediaUrl
+    });
+    
+    // Example of adding multiple media items (in a real app, this would come from the API)
+    // This is just for demonstration - in a real implementation, your Post type 
+    // would need to support multiple media items
+    if (post.additionalMedia) {
+      post.additionalMedia.forEach(item => {
+        mediaItems.push({
+          type: item.type as 'image' | 'video',
+          url: item.url
+        });
+      });
+    }
+  }
   
   const handleLikeClick = async () => {
     if (isLiking) return;
@@ -186,25 +207,8 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <div className="mb-4">
           <p className="mb-3">{formatContent(post.content)}</p>
           
-          {post.mediaUrl && post.mediaType === 'image' && (
-            <div className="relative rounded-lg overflow-hidden mb-2 aspect-video bg-muted/30">
-              <img 
-                src={post.mediaUrl} 
-                alt="Post content" 
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          )}
-          
-          {post.mediaUrl && post.mediaType === 'video' && (
-            <div className="rounded-lg overflow-hidden mb-2 aspect-video">
-              <VideoPlayer 
-                src={post.mediaUrl} 
-                poster={post.mediaUrl} 
-                className="w-full aspect-video"
-              />
-            </div>
+          {mediaItems.length > 0 && (
+            <MediaCarousel mediaItems={mediaItems} />
           )}
         </div>
       </CardContent>
