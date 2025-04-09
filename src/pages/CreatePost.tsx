@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -343,7 +342,7 @@ const CreatePost = () => {
         
         {mediaItems.length > 0 && (
           <div className="mb-4">
-            <ScrollArea className="w-full" orientation="horizontal">
+            <ScrollArea className="w-full">
               <div className="flex gap-2 pb-2">
                 {mediaItems.map((item, index) => (
                   <div key={index} className="relative h-24 w-24 flex-shrink-0">

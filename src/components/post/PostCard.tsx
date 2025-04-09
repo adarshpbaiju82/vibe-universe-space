@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -27,8 +26,15 @@ import { toast } from "sonner";
 import Comments from "./Comments";
 import { MediaCarousel, MediaItem } from "./MediaCarousel";
 
+interface ExtendedPost extends Post {
+  additionalMedia?: {
+    type: 'image' | 'video';
+    url: string;
+  }[];
+}
+
 interface PostCardProps {
-  post: Post;
+  post: ExtendedPost;
   onPostUpdate?: (updatedPost: Post) => void;
 }
 
@@ -37,7 +43,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   
-  // Convert post media to MediaItem array for carousel
   const mediaItems: MediaItem[] = [];
   if (post.mediaUrl && post.mediaType) {
     mediaItems.push({
@@ -45,9 +50,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
       url: post.mediaUrl
     });
     
-    // Example of adding multiple media items (in a real app, this would come from the API)
-    // This is just for demonstration - in a real implementation, your Post type 
-    // would need to support multiple media items
     if (post.additionalMedia) {
       post.additionalMedia.forEach(item => {
         mediaItems.push({
@@ -96,15 +98,12 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     return format(new Date(date), "MMM d");
   };
   
-  // Format the post content to highlight mentions and hashtags
   const formatContent = (content: string) => {
     if (!content) return null;
     
-    // Split by mentions and hashtags, preserving delimiters
     const parts = content.split(/(\s@\w+\s|\s#\w+\s|@\w+\s|#\w+\s|\s@\w+|\s#\w+|^@\w+\s|^#\w+\s|^@\w+|^#\w+)/).filter(Boolean);
     
     return parts.map((part, index) => {
-      // Check for mentions
       const mentionMatch = part.match(/^@(\w+)$|^@(\w+)\s|\s@(\w+)$|\s@(\w+)\s/);
       if (mentionMatch) {
         const username = mentionMatch[1] || mentionMatch[2] || mentionMatch[3] || mentionMatch[4];
@@ -125,7 +124,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         );
       }
       
-      // Check for hashtags
       const hashtagMatch = part.match(/^#(\w+)$|^#(\w+)\s|\s#(\w+)$|\s#(\w+)\s/);
       if (hashtagMatch) {
         const hashtag = hashtagMatch[1] || hashtagMatch[2] || hashtagMatch[3] || hashtagMatch[4];
@@ -146,7 +144,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         );
       }
       
-      // Regular text
       return part;
     });
   };
@@ -162,7 +159,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
     );
   }
   
-  // Guard against missing user data
   if (!post.user || !post.user.name) {
     return (
       <Card className="mb-4 p-4 text-center">
@@ -245,7 +241,6 @@ const PostCard = ({ post, onPostUpdate }: PostCardProps) => {
         <Comments postId={post.id} commentCount={post.comments} />
       </div>
       
-      {/* Share Dialog */}
       <Dialog 
         open={showShareDialog} 
         onOpenChange={setShowShareDialog}

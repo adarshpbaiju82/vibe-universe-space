@@ -9,6 +9,7 @@ import {
   CarouselPrevious 
 } from "@/components/ui/carousel";
 import { VideoPlayer } from "@/components/ui/video-player";
+import type { EmblaCarouselType } from "embla-carousel";
 
 export interface MediaItem {
   type: 'image' | 'video';
@@ -53,7 +54,7 @@ export const MediaCarousel = ({ mediaItems }: MediaCarouselProps) => {
     <Carousel 
       className="w-full" 
       opts={{ loop: true }}
-      onSelect={(api) => {
+      onSelect={(api: EmblaCarouselType) => {
         if (api) {
           setCurrentIndex(api.selectedScrollSnap());
         }
