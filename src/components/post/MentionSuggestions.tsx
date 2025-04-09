@@ -69,7 +69,7 @@ export const MentionSuggestions = ({ query, onSelect, position }: MentionSuggest
     <div 
       className="absolute z-50 w-64 rounded-md border border-input bg-popover shadow-md"
       style={{ 
-        top: `${position.top}px`, // Position exactly at cursor
+        top: `${position.top + 20}px`, // Position below the cursor with a small offset
         left: `${position.left}px` 
       }}
     >
