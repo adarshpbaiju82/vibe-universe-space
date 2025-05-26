@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Reply, MoreHorizontal } from "lucide-react";
+import { Loader2, MoreHorizontal, AtSign, Hash, Send } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -91,8 +90,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
   };
   
   const handleEditComment = async (commentId: string, content: string) => {
-    // In a real app, you'd call an API to update the comment
-    // For this demo, we'll simply update it in the client
     setComments(
       comments.map(comment => 
         comment.id === commentId 
@@ -107,8 +104,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
   const handleReply = async (commentId: string, content: string) => {
     if (!user || !content.trim()) return;
     
-    // In a real app, you'd call an API to save the reply
-    // For this demo, we'll create a local reply
     const newReply: Comment = {
       id: `reply-${Math.random().toString(36).substring(2, 9)}`,
       postId,
@@ -155,16 +150,13 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     setReplyContent("");
   };
   
-  // Group comments for threaded display (top-level comments and their replies)
   const commentThreads = comments.reduce((acc, comment) => {
     if (!comment.parentId) {
-      // This is a top-level comment
       acc[comment.id] = {
         comment,
         replies: []
       };
     } else {
-      // This is a reply
       if (acc[comment.parentId]) {
         acc[comment.parentId].replies.push(comment);
       }
@@ -172,7 +164,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     return acc;
   }, {} as Record<string, { comment: Comment, replies: Comment[] }>);
   
-  // Handle text changes for mentions and hashtags
   const handleTextChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
     setter: React.Dispatch<React.SetStateAction<string>>,
@@ -181,15 +172,12 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     const value = e.target.value;
     setter(value);
     
-    // Check for mentions (@) and hashtags (#)
     const selectionStart = e.target.selectionStart;
     const textBeforeCursor = value.substring(0, selectionStart);
     
-    // Reset positions
     setMentionPosition(null);
     setHashtagPosition(null);
     
-    // Check for mentions
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
     if (mentionMatch && !textBeforeCursor.match(/\S@\w*$/)) {
       const query = mentionMatch[1];
@@ -203,7 +191,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
       setMentionQuery("");
     }
     
-    // Check for hashtags
     const hashtagMatch = textBeforeCursor.match(/#(\w*)$/);
     if (hashtagMatch && !textBeforeCursor.match(/\S#\w*$/)) {
       const query = hashtagMatch[1];
@@ -218,55 +205,22 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     }
   };
   
-  // Gets cursor coordinates for suggestion positioning
   const getCursorCoordinates = (textarea: HTMLTextAreaElement, position: number) => {
-    // Create a mirror element
-    const mirror = document.createElement('div');
-    
-    // Copy the textarea's styling
+    const rect = textarea.getBoundingClientRect();
     const style = window.getComputedStyle(textarea);
-    Array.from(style).forEach(key => {
-      mirror.style.setProperty(key, style.getPropertyValue(key));
-    });
+    const fontSize = parseInt(style.fontSize);
+    const lineHeight = parseInt(style.lineHeight) || fontSize * 1.2;
     
-    // Set the mirror's fixed properties
-    mirror.style.position = 'absolute';
-    mirror.style.top = '0';
-    mirror.style.left = '0';
-    mirror.style.visibility = 'hidden';
-    mirror.style.overflow = 'hidden';
-    mirror.style.height = 'auto';
-    mirror.style.whiteSpace = 'pre-wrap';
-    mirror.style.wordBreak = 'break-word';
+    const lines = textarea.value.substring(0, position).split('\n');
+    const currentLine = lines.length - 1;
+    const charInLine = lines[lines.length - 1].length;
     
-    document.body.appendChild(mirror);
-    
-    // Get the text up to the cursor
-    const textBeforeCursor = textarea.value.substring(0, position);
-    
-    // Add text to the mirror
-    mirror.textContent = textBeforeCursor;
-    
-    // Create and add a span to mark the cursor position
-    const span = document.createElement('span');
-    span.textContent = '|';
-    mirror.appendChild(span);
-    
-    // Get the cursor coordinates relative to the mirror
-    const spanRect = span.getBoundingClientRect();
-    const textareaRect = textarea.getBoundingClientRect();
-    
-    // Clean up
-    document.body.removeChild(mirror);
-    
-    // Return the coordinates
     return {
-      top: Math.min(spanRect.top - textareaRect.top + textarea.scrollTop + span.offsetHeight, textarea.offsetHeight),
-      left: spanRect.left - textareaRect.left + textarea.scrollLeft
+      top: rect.top + window.scrollY + (currentLine * lineHeight) + lineHeight,
+      left: rect.left + window.scrollX + (charInLine * fontSize * 0.6)
     };
   };
   
-  // Handle mention/hashtag selection
   const handleSuggestionSelect = (
     text: string, 
     isHashtag: boolean,
@@ -280,7 +234,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     const textBeforeCursor = contentState.substring(0, selectionStart);
     const textAfterCursor = contentState.substring(selectionStart);
     
-    // Replace the last @word or #word with the selection
     const prefix = isHashtag ? '#' : '@';
     const newTextBeforeCursor = textBeforeCursor.replace(
       isHashtag ? /#\w*$/ : /@\w*$/,
@@ -289,11 +242,9 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     
     contentSetter(newTextBeforeCursor + textAfterCursor);
     
-    // Reset positions
     setMentionPosition(null);
     setHashtagPosition(null);
     
-    // Focus and place cursor after the inserted mention/hashtag
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
@@ -303,15 +254,12 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     }, 0);
   };
   
-  // Format content to highlight mentions and hashtags
   const formatContent = (content: string) => {
     if (!content) return null;
     
-    // Split by mentions and hashtags, preserving delimiters
     const parts = content.split(/(\s@\w+\s|\s#\w+\s|@\w+\s|#\w+\s|\s@\w+|\s#\w+|^@\w+\s|^#\w+\s|^@\w+|^#\w+)/).filter(Boolean);
     
     return parts.map((part, index) => {
-      // Check for mentions
       const mentionMatch = part.match(/^@(\w+)$|^@(\w+)\s|\s@(\w+)$|\s@(\w+)\s/);
       if (mentionMatch) {
         const username = mentionMatch[1] || mentionMatch[2] || mentionMatch[3] || mentionMatch[4];
@@ -332,7 +280,6 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
         );
       }
       
-      // Check for hashtags
       const hashtagMatch = part.match(/^#(\w+)$|^#(\w+)\s|\s#(\w+)$|\s#(\w+)\s/);
       if (hashtagMatch) {
         const hashtag = hashtagMatch[1] || hashtagMatch[2] || hashtagMatch[3] || hashtagMatch[4];
@@ -353,100 +300,156 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
         );
       }
       
-      // Regular text
       return part;
     });
   };
   
   return (
-    <div className="mt-2">
+    <div className="border-t border-border pt-4">
       <Button
         variant="ghost"
         size="sm"
-        className="mb-4 text-sm"
+        className="mb-4 text-sm font-medium"
         onClick={toggleComments}
       >
         {showComments ? "Hide" : "Show"} comments ({commentCount})
       </Button>
       
       {showComments && (
-        <>
+        <div className="space-y-4">
           {/* Add new comment */}
           {user && (
-            <div className="flex space-x-2 mb-4">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar} alt={user.username} />
-                <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 relative">
-                <Textarea
-                  ref={newCommentRef}
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => handleTextChange(e, setNewComment, newCommentRef)}
-                  className="min-h-[60px] text-sm mb-2 resize-none"
-                />
-                
-                <MentionSuggestions
-                  query={mentionQuery}
-                  onSelect={(username) => handleSuggestionSelect(username, false, newCommentRef, newComment, setNewComment)}
-                  position={mentionPosition}
-                />
-                
-                <HashtagSuggestions
-                  query={hashtagQuery}
-                  onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, newCommentRef, newComment, setNewComment)}
-                  position={hashtagPosition}
-                />
-                
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || submitting}
-                    className="vibe-button"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                        Posting...
-                      </>
-                    ) : "Post Comment"}
-                  </Button>
+            <div className="bg-muted/30 rounded-lg p-4">
+              <div className="flex space-x-3">
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarImage src={user.avatar} alt={user.username} />
+                  <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-3">
+                  <div className="relative">
+                    <Textarea
+                      ref={newCommentRef}
+                      placeholder="Write a comment..."
+                      value={newComment}
+                      onChange={(e) => handleTextChange(e, setNewComment, newCommentRef)}
+                      className="min-h-[80px] resize-none border-border bg-background"
+                    />
+                    
+                    <MentionSuggestions
+                      query={mentionQuery}
+                      onSelect={(username) => handleSuggestionSelect(username, false, newCommentRef, newComment, setNewComment)}
+                      position={mentionPosition}
+                    />
+                    
+                    <HashtagSuggestions
+                      query={hashtagQuery}
+                      onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, newCommentRef, newComment, setNewComment)}
+                      position={hashtagPosition}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-blue-500 hover:text-blue-600"
+                        onClick={() => {
+                          if (newCommentRef.current) {
+                            const start = newCommentRef.current.selectionStart;
+                            const end = newCommentRef.current.selectionEnd;
+                            const newContent = newComment.substring(0, start) + '@' + newComment.substring(end);
+                            setNewComment(newContent);
+                            
+                            setTimeout(() => {
+                              if (newCommentRef.current) {
+                                newCommentRef.current.focus();
+                                const newPosition = start + 1;
+                                newCommentRef.current.setSelectionRange(newPosition, newPosition);
+                              }
+                            }, 0);
+                          }
+                        }}
+                      >
+                        <AtSign className="h-4 w-4 mr-1" />
+                        Mention
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-pink-500 hover:text-pink-600"
+                        onClick={() => {
+                          if (newCommentRef.current) {
+                            const start = newCommentRef.current.selectionStart;
+                            const end = newCommentRef.current.selectionEnd;
+                            const newContent = newComment.substring(0, start) + '#' + newComment.substring(end);
+                            setNewComment(newContent);
+                            
+                            setTimeout(() => {
+                              if (newCommentRef.current) {
+                                newCommentRef.current.focus();
+                                const newPosition = start + 1;
+                                newCommentRef.current.setSelectionRange(newPosition, newPosition);
+                              }
+                            }, 0);
+                          }
+                        }}
+                      >
+                        <Hash className="h-4 w-4 mr-1" />
+                        Hashtag
+                      </Button>
+                    </div>
+                    
+                    <Button
+                      size="sm"
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim() || submitting}
+                      className="bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Post
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           )}
           
           {/* Comments list */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {loading ? (
-              // Display comment skeletons while loading
-              Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="flex space-x-2">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-24 mb-2" />
-                    <Skeleton className="h-10 w-full" />
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex space-x-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-16 w-full rounded-lg" />
                   </div>
                 </div>
               ))
             ) : comments.length > 0 ? (
               Object.values(commentThreads).map(({ comment, replies }) => (
-                <div key={comment.id} className="comment-thread">
+                <div key={comment.id} className="space-y-4">
                   {/* Main comment */}
-                  <div className="flex space-x-2">
-                    <Avatar className="h-8 w-8">
+                  <div className="flex space-x-3">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage src={comment.userAvatar} alt={comment.username} />
                       <AvatarFallback>{comment.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     
-                    <div className="flex-1">
-                      <div className="bg-muted p-2 rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div>
+                    <div className="flex-1 space-y-2">
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center space-x-2">
                             <span className="font-medium text-sm">{comment.username}</span>
-                            <span className="ml-2 text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {formatTimestamp(comment.createdAt)}
                             </span>
                           </div>
@@ -476,32 +479,30 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                         </div>
                         
                         {editingCommentId === comment.id ? (
-                          <div className="relative">
-                            <Textarea
-                              ref={editCommentRef}
-                              value={editContent}
-                              onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
-                              className="min-h-[60px] text-sm my-2 resize-none"
-                            />
-                            
-                            <MentionSuggestions
-                              query={mentionQuery}
-                              onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
-                              position={mentionPosition}
-                            />
-                            
-                            <HashtagSuggestions
-                              query={hashtagQuery}
-                              onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
-                              position={hashtagPosition}
-                            />
+                          <div className="space-y-3">
+                            <div className="relative">
+                              <Textarea
+                                ref={editCommentRef}
+                                value={editContent}
+                                onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
+                                className="min-h-[60px] resize-none"
+                              />
+                              
+                              <MentionSuggestions
+                                query={mentionQuery}
+                                onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
+                                position={mentionPosition}
+                              />
+                              
+                              <HashtagSuggestions
+                                query={hashtagQuery}
+                                onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
+                                position={hashtagPosition}
+                              />
+                            </div>
                             
                             <div className="flex justify-end space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={cancelEdit}
-                              >
+                              <Button size="sm" variant="outline" onClick={cancelEdit}>
                                 Cancel
                               </Button>
                               <Button
@@ -514,67 +515,67 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm">{formatContent(comment.content)}</p>
+                          <p className="text-sm leading-relaxed">{formatContent(comment.content)}</p>
                         )}
                       </div>
                       
                       {replyToId === comment.id && (
-                        <div className="mt-2 ml-6 relative">
-                          <Textarea
-                            ref={replyCommentRef}
-                            placeholder="Write a reply..."
-                            value={replyContent}
-                            onChange={(e) => handleTextChange(e, setReplyContent, replyCommentRef)}
-                            className="min-h-[60px] text-sm mb-2 resize-none"
-                          />
-                          
-                          <MentionSuggestions
-                            query={mentionQuery}
-                            onSelect={(username) => handleSuggestionSelect(username, false, replyCommentRef, replyContent, setReplyContent)}
-                            position={mentionPosition}
-                          />
-                          
-                          <HashtagSuggestions
-                            query={hashtagQuery}
-                            onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, replyCommentRef, replyContent, setReplyContent)}
-                            position={hashtagPosition}
-                          />
-                          
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={cancelReply}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleReply(comment.id, replyContent)}
-                              disabled={!replyContent.trim()}
-                            >
-                              Reply
-                            </Button>
+                        <div className="ml-6 bg-muted/30 rounded-lg p-3">
+                          <div className="space-y-3">
+                            <div className="relative">
+                              <Textarea
+                                ref={replyCommentRef}
+                                placeholder="Write a reply..."
+                                value={replyContent}
+                                onChange={(e) => handleTextChange(e, setReplyContent, replyCommentRef)}
+                                className="min-h-[60px] resize-none"
+                              />
+                              
+                              <MentionSuggestions
+                                query={mentionQuery}
+                                onSelect={(username) => handleSuggestionSelect(username, false, replyCommentRef, replyContent, setReplyContent)}
+                                position={mentionPosition}
+                              />
+                              
+                              <HashtagSuggestions
+                                query={hashtagQuery}
+                                onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, replyCommentRef, replyContent, setReplyContent)}
+                                position={hashtagPosition}
+                              />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                              <Button size="sm" variant="outline" onClick={cancelReply}>
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleReply(comment.id, replyContent)}
+                                disabled={!replyContent.trim()}
+                              >
+                                Reply
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       )}
                       
                       {/* Replies */}
                       {replies.length > 0 && (
-                        <div className="ml-6 mt-2 space-y-3">
+                        <div className="ml-6 space-y-3">
                           {replies.map(reply => (
-                            <div key={reply.id} className="flex space-x-2">
-                              <Avatar className="h-6 w-6">
+                            <div key={reply.id} className="flex space-x-3">
+                              <Avatar className="h-8 w-8 flex-shrink-0">
                                 <AvatarImage src={reply.userAvatar} alt={reply.username} />
                                 <AvatarFallback>{reply.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                               </Avatar>
                               
                               <div className="flex-1">
-                                <div className="bg-muted p-2 rounded-md">
-                                  <div className="flex justify-between items-start">
-                                    <div>
+                                <div className="bg-muted/30 rounded-lg p-3">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center space-x-2">
                                       <span className="font-medium text-sm">{reply.username}</span>
-                                      <span className="ml-2 text-xs text-muted-foreground">
+                                      <span className="text-xs text-muted-foreground">
                                         {formatTimestamp(reply.createdAt)}
                                       </span>
                                     </div>
@@ -601,32 +602,30 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                                   </div>
                                   
                                   {editingCommentId === reply.id ? (
-                                    <div className="relative">
-                                      <Textarea
-                                        ref={editCommentRef}
-                                        value={editContent}
-                                        onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
-                                        className="min-h-[60px] text-sm my-2 resize-none"
-                                      />
-                                      
-                                      <MentionSuggestions
-                                        query={mentionQuery}
-                                        onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
-                                        position={mentionPosition}
-                                      />
-                                      
-                                      <HashtagSuggestions
-                                        query={hashtagQuery}
-                                        onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
-                                        position={hashtagPosition}
-                                      />
+                                    <div className="space-y-3">
+                                      <div className="relative">
+                                        <Textarea
+                                          ref={editCommentRef}
+                                          value={editContent}
+                                          onChange={(e) => handleTextChange(e, setEditContent, editCommentRef)}
+                                          className="min-h-[60px] resize-none"
+                                        />
+                                        
+                                        <MentionSuggestions
+                                          query={mentionQuery}
+                                          onSelect={(username) => handleSuggestionSelect(username, false, editCommentRef, editContent, setEditContent)}
+                                          position={mentionPosition}
+                                        />
+                                        
+                                        <HashtagSuggestions
+                                          query={hashtagQuery}
+                                          onSelect={(hashtag) => handleSuggestionSelect(hashtag, true, editCommentRef, editContent, setEditContent)}
+                                          position={hashtagPosition}
+                                        />
+                                      </div>
                                       
                                       <div className="flex justify-end space-x-2">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={cancelEdit}
-                                        >
+                                        <Button size="sm" variant="outline" onClick={cancelEdit}>
                                           Cancel
                                         </Button>
                                         <Button
@@ -639,7 +638,7 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                                       </div>
                                     </div>
                                   ) : (
-                                    <p className="text-sm">{formatContent(reply.content)}</p>
+                                    <p className="text-sm leading-relaxed">{formatContent(reply.content)}</p>
                                   )}
                                 </div>
                               </div>
@@ -652,12 +651,14 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
                 </div>
               ))
             ) : (
-              <p className="text-center text-muted-foreground text-sm py-4">
-                No comments yet. Be the first to comment!
-              </p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground text-sm">
+                  No comments yet. Be the first to comment!
+                </p>
+              </div>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

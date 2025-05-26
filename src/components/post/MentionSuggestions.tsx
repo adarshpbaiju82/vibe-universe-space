@@ -67,33 +67,33 @@ export const MentionSuggestions = ({ query, onSelect, position }: MentionSuggest
 
   return (
     <div 
-      className="absolute z-50 w-64 rounded-md border border-input bg-popover shadow-md"
+      className="fixed z-50 w-80 rounded-lg border border-border bg-popover shadow-lg"
       style={{ 
-        top: `${position.top + 20}px`, // Position below the cursor with a small offset
+        top: `${position.top + 24}px`,
         left: `${position.left}px` 
       }}
     >
       <ScrollArea className="max-h-60">
-        <div className="p-1">
+        <div className="p-2">
           {loading ? (
-            <div className="flex items-center justify-center p-2">
+            <div className="flex items-center justify-center p-3">
               <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
           ) : (
             users.map((user, index) => (
               <button
                 key={user.id}
-                className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                  index === selectedIndex ? "bg-accent text-accent-foreground" : ""
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                  index === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
                 }`}
                 onClick={() => onSelect(user.username)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
-                <Avatar className="h-6 w-6">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
+                <div className="flex flex-col items-start">
                   <span className="font-medium">{user.name}</span>
                   <span className="text-xs text-muted-foreground">@{user.username}</span>
                 </div>
