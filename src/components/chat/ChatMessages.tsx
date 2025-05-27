@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { getChatMessages, getUserChats, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { 
   Send, 
   ArrowLeft, 
@@ -18,7 +18,9 @@ import {
   Mic,
   Camera,
   MapPin,
-  Gift
+  Gift,
+  File,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,6 +32,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ChatMessagesProps {
   chatId: string;
@@ -43,9 +50,25 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
   
+  // Emoji list for quick access
+  const emojis = [
+    "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂",
+    "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋",
+    "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳",
+    "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖",
+    "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯",
+    "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔",
+    "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉",
+    "👆", "🖕", "👇", "☝️", "👋", "🤚", "🖐", "✋", "🖖", "👏",
+    "🙌", "🤲", "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦿", "🦵"
+  ];
+
   useEffect(() => {
     const fetchChatData = async () => {
       if (!chatId || !user) return;
@@ -89,13 +112,24 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   };
   
   const handleSendMessage = async () => {
-    if (!messageText.trim() || sending) return;
+    if ((!messageText.trim() && !selectedFile) || sending) return;
     
     setSending(true);
     try {
-      const newMessage = await sendMessage(chatId, messageText);
+      let content = messageText;
+      if (selectedFile) {
+        content = selectedFile.type.startsWith('image/') 
+          ? `📷 ${selectedFile.name}` 
+          : `📄 ${selectedFile.name}`;
+        if (messageText.trim()) {
+          content = `${messageText}\n${content}`;
+        }
+      }
+      
+      const newMessage = await sendMessage(chatId, content);
       setMessages([...messages, newMessage]);
       setMessageText("");
+      setSelectedFile(null);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -137,7 +171,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   };
 
   const handleAttachFile = () => {
-    console.log("Attach file");
+    fileInputRef.current?.click();
   };
 
   const handleSendImage = () => {
@@ -163,7 +197,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
   const messageGroups = groupMessagesByDate();
   
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* Chat Header */}
       <div className="border-b p-3 flex items-center gap-3 bg-background">
         {isMobile && (
@@ -226,7 +260,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : null}
       </div>
       
-      {/* Messages Area - Full height minus header and input */}
+      {/* Full Screen Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-background/95">
         {loading ? (
           <div className="space-y-6">
@@ -316,67 +350,107 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         )}
       </div>
       
-      {/* Message Input Area */}
+      {/* Message Input Area - Fixed at bottom */}
       {chatPartner && (
-        <div className="p-3 border-t bg-background">
+        <div className="p-4 border-t bg-background">
+          {/* File Preview */}
+          {selectedFile && (
+            <div className="mb-3 p-3 bg-muted rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {selectedFile.type.startsWith('image/') ? (
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <File className="h-5 w-5 text-muted-foreground" />
+                )}
+                <span className="text-sm font-medium">{selectedFile.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRemoveFile}
+                className="h-6 w-6 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-end gap-2">
-            {/* Attachment Options */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top">
-                <DropdownMenuItem onClick={handleAttachFile}>
-                  <Paperclip className="h-4 w-4 mr-2" />
-                  Attach File
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendImage}>
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Send Image
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleTakePhoto}>
-                  <Camera className="h-4 w-4 mr-2" />
-                  Take Photo
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendLocation}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Send Location
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendGift}>
-                  <Gift className="h-4 w-4 mr-2" />
-                  Send Gift
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Attachment Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-10 w-10"
+              onClick={handleAttachFile}
+            >
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+            </Button>
             
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={handleVoiceMessage}>
-              <Mic className="h-4 w-4 text-muted-foreground" />
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileSelect}
+              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+            />
+            
+            {/* Voice Message */}
+            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+              <Mic className="h-5 w-5 text-muted-foreground" />
             </Button>
             
             {/* Text Input */}
-            <Textarea
-              placeholder="Type a message..."
-              className="min-h-[50px] resize-none text-sm py-3 rounded-xl flex-1"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-              <Smile className="h-4 w-4 text-muted-foreground" />
-            </Button>
+            <div className="flex-1 relative">
+              <Textarea
+                placeholder="Type a message..."
+                className="min-h-[50px] max-h-32 resize-none text-sm py-3 pr-12 rounded-xl"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              
+              {/* Emoji Picker */}
+              <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-2 top-2 h-8 w-8 rounded-full"
+                  >
+                    <Smile className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-2" align="end">
+                  <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
+                    {emojis.map((emoji, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-muted"
+                        onClick={() => handleEmojiSelect(emoji)}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             
             {/* Send Button */}
             <Button
               className="rounded-full h-10 w-10 p-0 bg-vibe-500 hover:bg-vibe-600"
-              disabled={!messageText.trim() || sending}
+              disabled={(!messageText.trim() && !selectedFile) || sending}
               onClick={handleSendMessage}
             >
               <Send className="h-5 w-5" />
