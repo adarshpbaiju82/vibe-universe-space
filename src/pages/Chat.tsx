@@ -8,7 +8,6 @@ import ChatMessages from "@/components/chat/ChatMessages";
 import { ArrowLeft, Plus, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const ChatPage = () => {
@@ -29,7 +28,6 @@ const ChatPage = () => {
         const userChats = await getUserChats(user.id);
         setChats(userChats);
         
-        // If we have a chatId from the URL, use it
         if (chatId) {
           setActiveChatId(chatId);
         }
@@ -67,10 +65,10 @@ const ChatPage = () => {
   }
   
   return (
-    <div className="flex h-[calc(100vh-64px)] md:h-[calc(100vh-150px)] bg-background rounded-lg overflow-hidden">
-      {/* Left sidebar - Chat list */}
-      <div className={`${activeChatId && isMobile ? 'hidden' : 'w-full'} md:w-80 lg:w-96 border-r flex flex-col`}>
-        <div className="p-4 border-b flex items-center justify-between">
+    <div className="flex h-screen bg-background">
+      {/* Left sidebar - Chat list - Fixed */}
+      <div className={`${activeChatId && isMobile ? 'hidden' : 'w-full'} md:w-80 lg:w-96 border-r flex flex-col bg-background`}>
+        <div className="p-4 border-b flex items-center justify-between bg-background">
           <h1 className="text-xl font-bold">Messages</h1>
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="icon" className="rounded-full">

@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Bell, User, Search, LogOut } from "lucide-react";
+import { Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,20 +25,6 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
             <h1 className="text-xl font-bold gradient-text">VibeUniverse</h1>
           </Link>
         </div>
-        
-        {/* Search - Only visible on desktop */}
-        {!isMobile && (
-          <div className="hidden md:flex items-center mx-4 w-full max-w-md">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="search"
-                placeholder="Search VibeUniverse..."
-                className="w-full bg-muted/50 border-none rounded-full py-2 pl-10 pr-4 text-sm"
-              />
-            </div>
-          </div>
-        )}
         
         {/* Right: Notifications, Profile, Logout */}
         <div className="flex items-center space-x-2">

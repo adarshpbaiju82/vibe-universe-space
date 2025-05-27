@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Compass, Bell, Settings, LogOut, PlusSquare } from "lucide-react";
+import { Home, Compass, Bell, Settings, LogOut, PlusSquare, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +21,7 @@ const Sidebar = ({ onCloseMobile }: SidebarProps) => {
     { path: "/", text: "Home", icon: Home },
     { path: "/explore", text: "Explore", icon: Compass },
     { path: "/create", text: "Create", icon: PlusSquare },
+    { path: "/chat", text: "Messages", icon: MessageSquare },
     { path: "/notifications", text: "Notifications", icon: Bell },
     { path: "/settings", text: "Settings", icon: Settings },
   ];
@@ -30,7 +31,7 @@ const Sidebar = ({ onCloseMobile }: SidebarProps) => {
       {/* User Profile Summary */}
       {user && (
         <Link 
-          to={`/profile/${user.username}`} 
+          to="/my-profile"
           className="flex items-center space-x-3 mb-8 p-2 rounded-md hover:bg-secondary/50 transition-colors"
         >
           <Avatar className="h-12 w-12">

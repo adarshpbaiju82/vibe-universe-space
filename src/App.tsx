@@ -8,12 +8,15 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import CurrentUserProfile from "./pages/CurrentUserProfile";
+import OtherUserProfile from "./pages/OtherUserProfile";
 import Explore from "./pages/Explore";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import CreatePost from "./pages/CreatePost";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyOTP from "./pages/VerifyOTP";
@@ -40,9 +43,12 @@ const App = () => (
             <Route path="/verify-otp" element={<VerifyOTP />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/reset-success" element={<ResetSuccess />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:chatId" element={<Chat />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="/profile/:username" element={<Profile />} />
+              <Route path="/my-profile" element={<CurrentUserProfile />} />
+              <Route path="/profile/:username" element={<OtherUserProfile />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/create" element={<CreatePost />} />
               <Route path="/notifications" element={<Notifications />} />

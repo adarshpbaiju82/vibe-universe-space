@@ -21,9 +21,11 @@ import { HashtagSuggestions } from "./HashtagSuggestions";
 interface CommentsProps {
   postId: string;
   commentCount: number;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const Comments = ({ postId, commentCount }: CommentsProps) => {
+export const Comments = ({ postId, isOpen, onClose }: CommentsProps) => {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -208,34 +210,53 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
   const getCursorCoordinates = (textarea: HTMLTextAreaElement, position: number) => {
     const rect = textarea.getBoundingClientRect();
     const style = window.getComputedStyle(textarea);
-    const fontSize = parseInt(style.fontSize);
-    const lineHeight = parseInt(style.lineHeight) || fontSize * 1.2;
     
-    // Create a mirror div to calculate text dimensions
+    // Create a mirror element with exact same styling
     const mirror = document.createElement('div');
+    const computedStyle = window.getComputedStyle(textarea);
+    
+    // Copy all the relevant styles
+    [
+      'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing',
+      'textTransform', 'wordWrap', 'whiteSpace', 'padding', 'border',
+      'boxSizing', 'width'
+    ].forEach(prop => {
+      mirror.style[prop as any] = computedStyle[prop as any];
+    });
+    
+    // Set position and visibility
     mirror.style.position = 'absolute';
     mirror.style.left = '-9999px';
     mirror.style.top = '-9999px';
-    mirror.style.width = `${rect.width}px`;
-    mirror.style.font = style.font;
+    mirror.style.height = 'auto';
+    mirror.style.overflow = 'hidden';
+    mirror.style.visibility = 'hidden';
     mirror.style.whiteSpace = 'pre-wrap';
-    mirror.style.wordWrap = 'break-word';
-    mirror.style.padding = style.padding;
-    mirror.style.border = style.border;
+    
     document.body.appendChild(mirror);
     
+    // Get the text up to cursor position
     const textBeforeCursor = textarea.value.substring(0, position);
     mirror.textContent = textBeforeCursor;
     
-    const mirrorRect = mirror.getBoundingClientRect();
-    const lines = textBeforeCursor.split('\n');
-    const currentLine = lines.length - 1;
+    // Create span to mark cursor position
+    const span = document.createElement('span');
+    span.textContent = '|';
+    mirror.appendChild(span);
     
+    const spanRect = span.getBoundingClientRect();
+    const mirrorRect = mirror.getBoundingClientRect();
+    
+    // Clean up
     document.body.removeChild(mirror);
     
+    // Calculate relative position to textarea
+    const relativeTop = spanRect.top - rect.top;
+    const relativeLeft = spanRect.left - rect.left;
+    
     return {
-      top: rect.top + window.scrollY + (currentLine * lineHeight) + lineHeight,
-      left: Math.min(rect.left + window.scrollX + (lines[currentLine].length * fontSize * 0.6), rect.right - 200),
+      top: rect.top + window.scrollY + relativeTop + span.offsetHeight,
+      left: Math.min(rect.left + window.scrollX + relativeLeft, rect.right - 250),
       bottom: rect.bottom + window.scrollY
     };
   };
