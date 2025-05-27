@@ -38,8 +38,8 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
   // For mentions and hashtags
   const [mentionQuery, setMentionQuery] = useState("");
   const [hashtagQuery, setHashtagQuery] = useState("");
-  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
-  const [hashtagPosition, setHashtagPosition] = useState<{ top: number; left: number } | null>(null);
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number; bottom?: number } | null>(null);
+  const [hashtagPosition, setHashtagPosition] = useState<{ top: number; left: number; bottom?: number } | null>(null);
   const newCommentRef = useRef<HTMLTextAreaElement>(null);
   const editCommentRef = useRef<HTMLTextAreaElement>(null);
   const replyCommentRef = useRef<HTMLTextAreaElement>(null);
@@ -211,13 +211,32 @@ const Comments = ({ postId, commentCount }: CommentsProps) => {
     const fontSize = parseInt(style.fontSize);
     const lineHeight = parseInt(style.lineHeight) || fontSize * 1.2;
     
-    const lines = textarea.value.substring(0, position).split('\n');
+    // Create a mirror div to calculate text dimensions
+    const mirror = document.createElement('div');
+    mirror.style.position = 'absolute';
+    mirror.style.left = '-9999px';
+    mirror.style.top = '-9999px';
+    mirror.style.width = `${rect.width}px`;
+    mirror.style.font = style.font;
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.style.padding = style.padding;
+    mirror.style.border = style.border;
+    document.body.appendChild(mirror);
+    
+    const textBeforeCursor = textarea.value.substring(0, position);
+    mirror.textContent = textBeforeCursor;
+    
+    const mirrorRect = mirror.getBoundingClientRect();
+    const lines = textBeforeCursor.split('\n');
     const currentLine = lines.length - 1;
-    const charInLine = lines[lines.length - 1].length;
+    
+    document.body.removeChild(mirror);
     
     return {
       top: rect.top + window.scrollY + (currentLine * lineHeight) + lineHeight,
-      left: rect.left + window.scrollX + (charInLine * fontSize * 0.6)
+      left: Math.min(rect.left + window.scrollX + (lines[currentLine].length * fontSize * 0.6), rect.right - 200),
+      bottom: rect.bottom + window.scrollY
     };
   };
   

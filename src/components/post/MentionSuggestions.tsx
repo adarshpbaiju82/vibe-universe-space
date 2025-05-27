@@ -13,7 +13,7 @@ interface User {
 interface MentionSuggestionsProps {
   query: string;
   onSelect: (username: string) => void;
-  position: { top: number; left: number } | null;
+  position: { top: number; left: number; bottom?: number } | null;
 }
 
 // This is a mock function - in a real app, you'd fetch from your API
@@ -65,13 +65,25 @@ export const MentionSuggestions = ({ query, onSelect, position }: MentionSuggest
 
   if (!position || users.length === 0) return null;
 
+  // Check if there's enough space below, if not show above
+  const suggestionHeight = 240; // max-h-60 = 240px
+  const spaceBelow = window.innerHeight - position.top;
+  const showAbove = spaceBelow < suggestionHeight && position.bottom !== undefined;
+  
+  const style = showAbove 
+    ? { 
+        bottom: `${window.innerHeight - (position.bottom || position.top)}px`,
+        left: `${position.left}px` 
+      }
+    : { 
+        top: `${position.top + 24}px`,
+        left: `${position.left}px` 
+      };
+
   return (
     <div 
       className="fixed z-50 w-80 rounded-lg border border-border bg-popover shadow-lg"
-      style={{ 
-        top: `${position.top + 24}px`,
-        left: `${position.left}px` 
-      }}
+      style={style}
     >
       <ScrollArea className="max-h-60">
         <div className="p-2">
