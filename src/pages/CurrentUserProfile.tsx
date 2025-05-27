@@ -8,12 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import PostCard, { PostCardSkeleton } from "@/components/post/PostCard";
 import EditProfileForm from "@/components/profile/EditProfileForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Pencil, Share2 } from "lucide-react";
+import { Pencil, Share2, Upload, Home } from "lucide-react";
 
 const CurrentUserProfile = () => {
   const { user: currentUser } = useAuth();
@@ -24,7 +26,9 @@ const CurrentUserProfile = () => {
   const [mediaLoading, setMediaLoading] = useState(true);
   const [likesLoading, setLikesLoading] = useState(true);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCoverDialog, setShowCoverDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const [coverImage, setCoverImage] = useState<string>("/api/placeholder/1200/300");
   
   useEffect(() => {
     const fetchUserPosts = async () => {
@@ -93,6 +97,24 @@ const CurrentUserProfile = () => {
     toast.success("Profile updated successfully");
   };
   
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setCoverImage(previewUrl);
+      setShowCoverDialog(false);
+      toast.success("Cover photo updated successfully!");
+    }
+  };
+
+  const predefinedCovers = [
+    "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=1200&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=1200&h=300&fit=crop", 
+    "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=1200&h=300&fit=crop"
+  ];
+
   if (!currentUser) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
@@ -106,12 +128,15 @@ const CurrentUserProfile = () => {
       {/* Profile Header */}
       <div className="mb-6">
         {/* Cover Photo */}
-        <div className="h-48 bg-gradient-to-r from-vibe-500 to-purple-500 rounded-lg relative mb-16">
+        <div 
+          className="h-48 rounded-lg relative mb-16 bg-cover bg-center"
+          style={{ backgroundImage: `url(${coverImage})` }}
+        >
           <Button
             variant="secondary"
             size="sm"
             className="absolute top-4 right-4"
-            onClick={() => toast.info("Edit cover photo functionality would go here")}
+            onClick={() => setShowCoverDialog(true)}
           >
             <Pencil className="h-4 w-4 mr-1" />
             Edit Cover
@@ -119,8 +144,8 @@ const CurrentUserProfile = () => {
           
           {/* Profile Picture */}
           <Avatar className="absolute -bottom-12 left-6 h-24 w-24 border-4 border-background">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
-            <AvatarFallback className="text-2xl">{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={currentUser?.avatar} alt={currentUser?.username} />
+            <AvatarFallback className="text-2xl">{currentUser?.username.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
         </div>
         
@@ -270,6 +295,47 @@ const CurrentUserProfile = () => {
         </Tabs>
       </div>
       
+      {/* Edit Cover Dialog */}
+      <Dialog open={showCoverDialog} onOpenChange={setShowCoverDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Cover Photo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {predefinedCovers.map((cover, index) => (
+                <div
+                  key={index}
+                  className="aspect-[4/1] bg-cover bg-center rounded-lg cursor-pointer border-2 border-transparent hover:border-primary transition-colors"
+                  style={{ backgroundImage: `url(${cover})` }}
+                  onClick={() => {
+                    setCoverImage(cover);
+                    setShowCoverDialog(false);
+                    toast.success("Cover photo updated successfully!");
+                  }}
+                />
+              ))}
+            </div>
+            <div className="text-center">
+              <label className="cursor-pointer">
+                <Button variant="outline" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Custom Image
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverImageChange}
+                />
+              </label>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Profile Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-xl">
