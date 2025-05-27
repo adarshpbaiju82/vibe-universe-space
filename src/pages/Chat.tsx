@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { getUserChats, Chat } from "@/services/dataService";
@@ -90,7 +91,6 @@ const ChatPage = () => {
   }
   
   const filteredChats = chats.filter(chat => 
-    chat.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chat.participants?.some(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   

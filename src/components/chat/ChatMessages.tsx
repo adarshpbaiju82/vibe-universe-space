@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { getChatMessages, getUserChats, sendMessage, Message } from "@/services/dataService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,11 +14,22 @@ import {
   MoreVertical, 
   Image as ImageIcon,
   Smile,
-  Paperclip
+  Paperclip,
+  Mic,
+  Camera,
+  MapPin,
+  Gift
 } from "lucide-react";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 
 interface ChatMessagesProps {
   chatId: string;
@@ -115,12 +127,45 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
     
     return groups;
   };
+
+  const handleVoiceCall = () => {
+    console.log("Voice call initiated");
+  };
+
+  const handleVideoCall = () => {
+    console.log("Video call initiated");
+  };
+
+  const handleAttachFile = () => {
+    console.log("Attach file");
+  };
+
+  const handleSendImage = () => {
+    console.log("Send image");
+  };
+
+  const handleSendLocation = () => {
+    console.log("Send location");
+  };
+
+  const handleSendGift = () => {
+    console.log("Send gift");
+  };
+
+  const handleVoiceMessage = () => {
+    console.log("Record voice message");
+  };
+
+  const handleTakePhoto = () => {
+    console.log("Take photo");
+  };
   
   const messageGroups = groupMessagesByDate();
   
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="border-b p-3 flex items-center gap-3">
+      {/* Chat Header */}
+      <div className="border-b p-3 flex items-center gap-3 bg-background">
         {isMobile && (
           <Button variant="ghost" size="icon" className="mr-1" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />
@@ -148,15 +193,26 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
             </div>
             
             <div className="flex items-center">
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={handleVoiceCall}>
                 <Phone className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={handleVideoCall}>
                 <Video className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>View Profile</DropdownMenuItem>
+                  <DropdownMenuItem>Search Messages</DropdownMenuItem>
+                  <DropdownMenuItem>Mute Notifications</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-red-600">Block User</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         ) : loading ? (
@@ -170,6 +226,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         ) : null}
       </div>
       
+      {/* Messages Area - Full height minus header and input */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-background/95">
         {loading ? (
           <div className="space-y-6">
@@ -218,7 +275,7 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
                             </AvatarFallback>
                           </Avatar>
                         ) : !isCurrentUser ? (
-                          <div className="w-8" /> // Spacer for alignment
+                          <div className="w-8" />
                         ) : null}
                         
                         <div>
@@ -259,24 +316,49 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
         )}
       </div>
       
+      {/* Message Input Area */}
       {chatPartner && (
         <div className="p-3 border-t bg-background">
           <div className="flex items-end gap-2">
-            <div className="flex gap-1.5 mr-1">
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <Paperclip className="h-4 w-4 text-muted-foreground" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <Smile className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
+            {/* Attachment Options */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top">
+                <DropdownMenuItem onClick={handleAttachFile}>
+                  <Paperclip className="h-4 w-4 mr-2" />
+                  Attach File
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSendImage}>
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Send Image
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleTakePhoto}>
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSendLocation}>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Send Location
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSendGift}>
+                  <Gift className="h-4 w-4 mr-2" />
+                  Send Gift
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={handleVoiceMessage}>
+              <Mic className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            
+            {/* Text Input */}
             <Textarea
               placeholder="Type a message..."
-              className="min-h-[50px] resize-none text-sm py-3 rounded-xl"
+              className="min-h-[50px] resize-none text-sm py-3 rounded-xl flex-1"
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyDown={(e) => {
@@ -287,6 +369,11 @@ const ChatMessages = ({ chatId, onBack }: ChatMessagesProps) => {
               }}
             />
             
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+              <Smile className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            
+            {/* Send Button */}
             <Button
               className="rounded-full h-10 w-10 p-0 bg-vibe-500 hover:bg-vibe-600"
               disabled={!messageText.trim() || sending}
