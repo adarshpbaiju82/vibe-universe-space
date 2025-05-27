@@ -21,11 +21,9 @@ import { HashtagSuggestions } from "./HashtagSuggestions";
 interface CommentsProps {
   postId: string;
   commentCount: number;
-  isOpen: boolean;
-  onClose: () => void;
 }
 
-export const Comments = ({ postId, isOpen, onClose }: CommentsProps) => {
+export const Comments = ({ postId, commentCount }: CommentsProps) => {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
