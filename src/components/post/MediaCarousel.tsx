@@ -9,7 +9,7 @@ import {
   CarouselPrevious 
 } from "@/components/ui/carousel";
 import { VideoPlayer } from "@/components/ui/video-player";
-import type { EmblaCarouselType } from "embla-carousel";
+import type { EmblaCarouselType } from "embla-carousel-react";
 
 export interface MediaItem {
   type: 'image' | 'video';
